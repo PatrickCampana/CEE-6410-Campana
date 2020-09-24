@@ -35,13 +35,13 @@ PARAMETERS
          Tomatoes 7/
    b(res) Right hand constraint values (per resource)
           /Water 4000000,
-           Land  12000
-           Labor 17500/;
+           Land  12000,
+           Labor 17500 /;
 
 TABLE A(plnt,res) Left hand side constraint coefficients
                  Water    Land  Labor
- Eggplant        1000      4    5
- Tomatoes        2000      3    2.5;
+ Eggplant        1000      4     5
+ Tomatoes        2000      3     2.5;
 
 * 3. DEFINE the variables
 VARIABLES X(plnt) plants planted (Number)
