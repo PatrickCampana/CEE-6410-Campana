@@ -60,7 +60,7 @@ PARAMETERS
 
          test(time) = ORD(Time);
          display test;
-  test(TimeP1) = test(timep1-1);
+  test(Time) = test(time+1);
          display test;
 
 
@@ -90,13 +90,14 @@ POSITIVE VARIABLES X;
 * 4. COMBINE variables and data in equations
 EQUATIONS
    PROFIT Total profit ($) and objective function value
-   LFlow_CONSTRAINTS(CLoc,time) Flow Constraints that must be met or less than (volume)
+   LFlow_CONSTRAINTS(CLoc,Time) Flow Constraints that must be met or less than (volume)
    GFlow_CONSTRAINTS(GLoc,time) Flow Constraints that must be met or greater than (volume)
    IResMB Intial Reservoir Mass Balance (volume)
    ResMB(Time)  Reservoir Mass Balance For Time Steps Greater than M1 (Volume)
    RiverMB(Loc,Time) River Mass Balance For all Time Steps (Volume)
    Sustainability Makes it so that Final Reservoir storage is not less that intial;
 
+*Maximize Profit
 PROFIT..     VPROFIT =E= SUM( (PLoc,Time), c(Ploc,Time)*X(Ploc,Time) );
 
 *Equations that Limit Reservoir and Turbine Volumes For each time step, defines two sets of equations, 12 total
@@ -109,7 +110,7 @@ GFlow_CONSTRAINTS (GLoc, time)..     X(GLoc,Time) =G= bge(GLoc);
 IResMB..   FlowIn('Reservoir','M1') + IStore - X('spillway','M1')- X('Turbines','M1')=E= X('Reservoir', 'M1');
 
 * Reservoir Mass Balance, defines one set of equations, 5 total
-ResMB(Time)$(ORD(Time) ge 2)..   X('Reservoir', Time - 1) + FlowIn('Reservoir',Time)- X('spillway',Time)- X('Turbines',Time)  =E= X('Reservoir',Time);
+ResMB(Time)$(ORD(Time)ge 2 )..   X('Reservoir', Time - 1) + FlowIn('Reservoir',Time)- X('spillway',Time)- X('Turbines',Time)  =E= X('Reservoir',Time);
 
 *River Mass Balance, defines one set of equations, 6 total
 RiverMB(Loc,Time)..   X('Spillway',Time)+ X('Turbines',Time) =E= X('Irrigation', Time)+X('RiverA',Time);
@@ -126,6 +127,8 @@ MODEL ReservoirOptimization /ALL/;
 * 6. SOLVE the MODEL
 * Solve the ReservoirOptimization model using a Linear Programming Solver (see File=>Options=>Solvers)
 *     to maximize VPROFIT
+option solslack = 1;
+
 SOLVE ReservoirOptimization USING LP MAXIMIZING VPROFIT;
 
 * 6. CLick File menu => RUN (F9) or Solve icon and examine solution report in .LST file
