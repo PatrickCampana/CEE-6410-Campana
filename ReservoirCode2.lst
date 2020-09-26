@@ -1,4 +1,4 @@
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 18:50:48 Page 1
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 1
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 C o m p i l a t i o n
 
@@ -57,7 +57,7 @@ C o m p i l a t i o n
   44       GLoc(Loc)  Locations which generate Profit /RiverA/
   45       ILoc (Loc) Locations which Receive external Flows /Reservoir/
   46       Time Months in period of interest (months) /M1, M2,M3, M4, M5, M6/
-  47       TimeP1(Time)   Months after M1 /M2,M3, M4, M5, M6/;
+  47   
   48   
   49  * 2. DEFINE input data, Flow Constraints Coeffiecents, Monthly Inflow, Pro
       fit Coefficients
@@ -93,127 +93,130 @@ C o m p i l a t i o n
   76   
   77    Scalar
   78           IStore Intial Storage In Reservoir /5/;
-  79  *2A Create set for incremental adjustment of river flow
-  80  SETS Inflows /I1*I18/;
-  81   
-  82  Parameter InflowReq(Inflows) Incremental Inflow Increases (units H2O);
-  83   
-  84  InflowReq(Inflows) = 1 +0.1*(ord(Inflows)-1);
-  85   
-  86  *Display Inflow Set
-  87  Display InflowReq;
-  88   
-  89  Parameters ObjFunc(Inflows) Objective Function values ($)
-  90           DecVars (Inflows,Loc,Time) Decision Variable Values (Flows) to Lo
-      cations
-  91           ShadowValsCloc(Inflows, CLoc,Time) Marginals for Cloc locations
-  92           ShadowValsGloc(Inflows, GLoc,Time) Marginals for Gloc locations;
-  93   
-  94  * 3. DEFINE the variables: Flow to each location, Benefit
-  95  VARIABLES
-  96            X(Loc, Time) Flow Per Location Per Time (Volume)
-  97            VPROFIT  total profit ($);
-  98   
-  99  * Non-negativity constraints
- 100  POSITIVE VARIABLES X;
- 101   
- 102  * 4. COMBINE variables and data in equations
- 103  EQUATIONS
- 104     PROFIT Total profit ($) and objective function value
- 105     LFlow_CONSTRAINTS(CLoc,Time) Flow Constraints that must be met or less 
+  79   
+  80  *2A Create set for incremental adjustment of river flow
+  81  *SETS Inflows /I1*I18/;
+  82   
+  83  *Parameter InflowReq(Inflows) Incremental Inflow Increases (units H2O);
+  84   
+  85  *InflowReq(Inflows) = 1 +0.1*(ord(Inflows)-1);
+  86   
+  87  *Display Inflow Set
+  88  *Display InflowReq;
+  89   
+  90  *Parameters ObjFunc(Inflows) Objective Function values ($)
+  91  *         DecVars (Inflows,Loc,Time) Decision Variable Values (Flows) to L
+      ocations
+  92  *         ShadowValsCloc(Inflows, CLoc,Time) Marginals for Cloc locations
+  93  *         ShadowValsGloc(Inflows, GLoc,Time) Marginals for Gloc locations;
+  94   
+  95  * 3. DEFINE the variables: Flow to each location, Benefit
+  96  VARIABLES
+  97            X(Loc, Time) Flow Per Location Per Time (Volume)
+  98            VPROFIT  total profit ($);
+  99   
+ 100  * Non-negativity constraints
+ 101  POSITIVE VARIABLES X;
+ 102   
+ 103  * 4. COMBINE variables and data in equations
+ 104  EQUATIONS
+ 105     PROFIT Total profit ($) and objective function value
+ 106     LFlow_CONSTRAINTS(CLoc,Time) Flow Constraints that must be met or less 
       than (volume)
- 106     GFlow_CONSTRAINTS(GLoc,time) Flow Constraints that must be met or great
+ 107     GFlow_CONSTRAINTS(GLoc,time) Flow Constraints that must be met or great
       er than (volume)
- 107     IResMB Intial Reservoir Mass Balance (volume)
- 108     ResMB(Time)  Reservoir Mass Balance For Time Steps Greater than M1 (Vol
+ 108     IResMB Intial Reservoir Mass Balance (volume)
+ 109     ResMB(Time)  Reservoir Mass Balance For Time Steps Greater than M1 (Vol
       ume)
- 109     RiverMB(Loc,Time) River Mass Balance For all Time Steps (Volume)
- 110     Sustainability Makes it so that Final Reservoir storage is not less tha
+ 110     RiverMB(Loc,Time) River Mass Balance For all Time Steps (Volume)
+ 111     Sustainability Makes it so that Final Reservoir storage is not less tha
       t intial;
- 111   
- 112  *Maximize Profit
- 113  PROFIT..     VPROFIT =E= SUM( (PLoc,Time), c(Ploc,Time)*X(Ploc,Time) );
- 114   
- 115  *Equations that Limit Reservoir and Turbine Volumes For each time step, de
-      fines two sets of equations, 12 total
- 116  LFlow_CONSTRAINTS(CLoc,Time)..  X(CLoc,Time) =L= ble(Cloc);
+ 112   
+ 113   
+ 114  *Maximize Profit
+ 115  PROFIT..     VPROFIT =E= SUM( (PLoc,Time), c(Ploc,Time)*X(Ploc,Time) );
+ 116   
  117   
- 118  *Equations that set RiverA volumes for each time step, defines one set of 
-      equations, 6 total
- 119  GFlow_CONSTRAINTS (GLoc, time)..     X(GLoc,Time) =G= bge(GLoc);
+ 118  *Equations that Limit Reservoir and Turbine Volumes For each time step, de
+      fines two sets of equations, 12 total
+ 119  LFlow_CONSTRAINTS(CLoc,Time)..  X(CLoc,Time) =L= ble(Cloc);
  120   
- 121  *Intial Reservoir Mass Balance, defines one set of equations, 1 total
- 122  IResMB..   FlowIn('Reservoir','M1') + IStore - X('spillway','M1')- X('Turb
-      ines','M1')=E= X('Reservoir', 'M1');
+ 121  *Equations that set RiverA volumes for each time step, defines one set of 
+      equations, 6 total
+ 122  GFlow_CONSTRAINTS (GLoc, time)..     X(GLoc,Time) =G= bge(GLoc);
  123   
- 124  * Reservoir Mass Balance, defines one set of equations, 5 total
- 125  ResMB(Time)$(ORD(Time)ge 2 )..   X('Reservoir', Time - 1) + FlowIn('Reserv
+ 124  *Intial Reservoir Mass Balance, defines one set of equations, 1 total
+ 125  IResMB..   FlowIn('Reservoir','M1') + IStore - X('spillway','M1')- X('Turb
+      ines','M1')=E= X('Reservoir', 'M1');
+ 126   
+ 127  * Reservoir Mass Balance, defines one set of equations, 5 total
+ 128  ResMB(Time)$(ORD(Time)ge 2 )..   X('Reservoir', Time - 1) + FlowIn('Reserv
       oir',Time)- X('spillway',Time)- X('Turbines',Time)  =E= X('Reservoir',Time
       );
- 126   
- 127  *River Mass Balance, defines one set of equations, 6 total
- 128  RiverMB(Loc,Time)..   X('Spillway',Time)+ X('Turbines',Time) =E= X('Irriga
-      tion', Time)+X('RiverA',Time);
  129   
- 130  *Sustainability Constraint, defines one set of equations, 1 total
- 131  Sustainability.. X('Reservoir','M6') =G= IStore;
+ 130  *River Mass Balance, defines one set of equations, 6 total
+ 131  RiverMB(Loc,Time)..   X('Spillway',Time)+ X('Turbines',Time) =E= X('Irriga
+      tion', Time)+X('RiverA',Time);
  132   
- 133   
- 134  * 5. DEFINE the MODEL from the EQUATIONS
- 135  MODEL
- 136  ReservoirOptimization /ALL/;
- 137  *Removed objective and RHS range analysis
- 138  ReservoirOptimization.OptFile = 1;
- 139   
- 140  *Show Slack Instead of lower or upper bound
- 141  option solslack = 1;
- 142  *Loop (Inflows,
- 143  *Parametrically set the model input parameter of River Inflow Requirment f
+ 133  *Sustainability Constraint, defines one set of equations, 1 total
+ 134  Sustainability.. X('Reservoir','M6') =G= IStore;
+ 135   
+ 136   
+ 137  * 5. DEFINE the MODEL from the EQUATIONS
+ 138  MODEL
+ 139  ReservoirOptimization /ALL/;
+ 140  *Removed objective and RHS range analysis
+ 141  ReservoirOptimization.OptFile = 1;
+ 142   
+ 143  *Show Slack Instead of lower or upper bound
+ 144  option solslack = 1;
+ 145  *Loop (Inflows,
+ 146  *Parametrically set the model input parameter of River Inflow Requirment f
       or this run
- 144  *       bge('RiverA') = InflowReq(Inflows);
- 145   
- 146  *        Initialize decision Variables
- 147  *       X.L(Loc,Time) = 0;
+ 147  *       bge('RiverA') = InflowReq(Inflows);
  148   
- 149  *        Solve Model
- 150  SOLVE ReservoirOptimization USING LP MAXIMIZING VPROFIT;
+ 149  *        Initialize decision Variables
+ 150  *       X.L(Loc,Time) = 0;
  151   
- 152  *        Record Incremental Solution Changes
- 153  *        Objective Function Value
- 154  *       ObjFunc(Inflows) = VPROFIT.L;
- 155  *        Decision Variables Value
- 156  *         DecVars (Inflows,Loc,Time)= X.L(Loc,time);
- 157  *        Track Turbines Flow
- 158  *         ShadowValsCloc(Inflows, CLoc, time) =  LFlow_CONSTRAINTS.M(CLoc,
+ 152  *        Solve Model
+ 153  SOLVE ReservoirOptimization USING LP MAXIMIZING VPROFIT;
+ 154   
+ 155  *        Record Incremental Solution Changes
+ 156  *        Objective Function Value
+ 157  *       ObjFunc(Inflows) = VPROFIT.L;
+ 158  *        Decision Variables Value
+ 159  *         DecVars (Inflows,Loc,Time)= X.L(Loc,time);
+ 160  *        Track Turbines Flow
+ 161  *         ShadowValsCloc(Inflows, CLoc, time) =  LFlow_CONSTRAINTS.M(CLoc,
       Time);
- 159  *         ShadowValsGloc(Inflows, GLoc,Time) =   GFlow_CONSTRAINTS.M (GLoc
+ 162  *         ShadowValsGloc(Inflows, GLoc,Time) =   GFlow_CONSTRAINTS.M (GLoc
       , time);
- 160  *      );
- 161  *        Finish Loop
- 162   
- 163   
- 164   
- 165  * Print out results from loop
- 166  *DISPLAY InflowReq, ObjFunc, DecVars, ShadowValsCloc, ShadowValsGloc;
+ 163  *      );
+ 164  *        Finish Loop
+ 165   
+ 166   
  167   
- 168  * 6. SOLVE the MODEL
- 169  * Solve the ReservoirOptimization model using a Linear Programming Solver 
+ 168  * Print out results from loop
+ 169  *DISPLAY InflowReq, ObjFunc, DecVars, ShadowValsCloc, ShadowValsGloc;
+ 170   
+ 171  * 6. SOLVE the MODEL
+ 172  * Solve the ReservoirOptimization model using a Linear Programming Solver 
       (see File=>Options=>Solvers)
- 170  *     to maximize VPROFIT
- 171   
- 172   
- 173  * 6. CLick File menu => RUN (F9) or Solve icon and examine solution report
-       in .LST file
+ 173  *     to maximize VPROFIT
  174   
- 175  Execute_Unload "ReservoirCode2.gdx";
- 176  * Dump the gdx file to an Excel workbook
- 177  Execute "gdx2xls ReservoirCode2.gdx"
- 178  * To open the GDX file in the GAMS IDE, select File => Open.
- 179  * In the Open window, set Filetype to .gdx and select the file.
+ 175   
+ 176  * 6. CLick File menu => RUN (F9) or Solve icon and examine solution report
+       in .LST file
+ 177   
+ 178  Execute_Unload "ReservoirCode2.gdx";
+ 179  * Dump the gdx file to an Excel workbook
+ 180  Execute "gdx2xls ReservoirCode2.gdx"
+ 181  * To open the GDX file in the GAMS IDE, select File => Open.
+ 182  * In the Open window, set Filetype to .gdx and select the file.
 
 
-COMPILATION TIME     =        0.016 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 18:50:48 Page 2
+COMPILATION TIME     =        0.000 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 2
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
@@ -227,16 +230,9 @@ M1 1.000,    M2 2.000,    M3 3.000,    M4 4.000,    M5 5.000,    M6 6.000
 
 M1 2.000,    M2 3.000,    M3 4.000,    M4 5.000,    M5 6.000
 
-
-----     87 PARAMETER InflowReq  Incremental Inflow Increases (units H2O)
-
-I1  1.000,    I2  1.100,    I3  1.200,    I4  1.300,    I5  1.400,    I6  1.500
-I7  1.600,    I8  1.700,    I9  1.800,    I10 1.900,    I11 2.000,    I12 2.100
-I13 2.200,    I14 2.300,    I15 2.400,    I16 2.500,    I17 2.600,    I18 2.700
-
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 18:50:48 Page 3
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 3
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE ReservoirOptimization Using LP From line 150
+Equation Listing    SOLVE ReservoirOptimization Using LP From line 153
 
 
 ---- PROFIT  =E=  Total profit ($) and objective function value
@@ -319,9 +315,9 @@ REMAINING 27 ENTRIES SKIPPED
 
 Sustainability..  X(Reservoir,M6) =G= 5 ; (LHS = 0, INFES = 5 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 18:50:48 Page 4
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 4
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE ReservoirOptimization Using LP From line 150
+Column Listing      SOLVE ReservoirOptimization Using LP From line 153
 
 
 ---- X  Flow Per Location Per Time (Volume)
@@ -352,9 +348,9 @@ VPROFIT
                 (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
         1       PROFIT
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 18:50:48 Page 5
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 5
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE ReservoirOptimization Using LP From line 150
+Model Statistics    SOLVE ReservoirOptimization Using LP From line 153
 
 
 MODEL STATISTICS
@@ -364,17 +360,17 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
 NON ZERO ELEMENTS           175
 
 
-GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 18:50:48 Page 6
+GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 6
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE ReservoirOptimization Using LP From line 150
+Solution Report     SOLVE ReservoirOptimization Using LP From line 153
 
 
                S O L V E      S U M M A R Y
 
      MODEL   ReservoirOptimization   OBJECTIVE  VPROFIT
      TYPE    LP                      DIRECTION  MAXIMIZE
-     SOLVER  CPLEX                   FROM LINE  150
+     SOLVER  CPLEX                   FROM LINE  153
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      1 Optimal                   
@@ -389,7 +385,7 @@ Cplex 12.10.0.0
 
 Reading parameter(s) from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE
                                                         -6410-Campana\cplex.opt"
->>  objrng all    
+>> 
 >>  rhsrng all
 Finished reading from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-641
                                                             0-Campana\cplex.opt"
@@ -460,43 +456,6 @@ RiverMB(RiverA, M4)                               0            0            0
 RiverMB(RiverA, M5)                               0            0            0
 RiverMB(RiverA, M6)                               0            0            0
 Sustainability                                    3            5            6
-  
- 
-VARIABLE NAME                                 LOWER      CURRENT        UPPER
--------------                                 -----      -------        -----
-X(Reservoir, M1)                               -1.1           -0         +INF
-X(Reservoir, M2)                               -0.8           -0         +INF
-X(Reservoir, M3)                               -0.2           -0          1.5
-X(Reservoir, M4)                               -0.5           -0          1.5
-X(Reservoir, M5)                               -0.5           -0          1.5
-X(Reservoir, M6)                               -INF           -0          3.7
-X(Spillway, M1)                                -INF           -0          1.6
-X(Spillway, M2)                                -INF           -0          1.7
-X(Spillway, M3)                                -INF           -0          1.8
-X(Spillway, M4)                                -INF           -0          1.7
-X(Spillway, M5)                                -INF           -0          1.5
-X(Spillway, M6)                                -INF           -0          1.5
-X(Turbines, M1)                                   0          1.6          2.7
-X(Turbines, M2)                           -2.22e-16          1.7          2.5
-X(Turbines, M3)                                   1          1.8            2
-X(Turbines, M4)                                 1.7          1.9         +INF
-X(Turbines, M5)                                 1.5            2         +INF
-X(Turbines, M6)                                 1.5            2         +INF
-X(Irrigation, M1)                              -INF            1          2.1
-X(Irrigation, M2)                              -INF          1.2            2
-X(Irrigation, M3)                               1.1          1.9          2.1
-X(Irrigation, M4)                               1.8            2          3.7
-X(Irrigation, M5)                               1.7          2.2          3.7
-X(Irrigation, M6)                               1.7          2.2          3.7
-X(RiverA, M1)                                  -INF           -0          2.1
-X(RiverA, M2)                                  -INF           -0            2
-X(RiverA, M3)                                  -INF           -0          1.9
-X(RiverA, M4)                                  -INF           -0            2
-X(RiverA, M5)                                  -INF           -0          2.2
-X(RiverA, M6)                                  -INF           -0          2.2
-VPROFIT                                        -INF            1         +INF
- 
- 
 
                        LOWER     SLACK     UPPER    MARGINAL
 
@@ -637,7 +596,7 @@ RiverA    .M6      .        1.000     +INF       .
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 18:50:48 Page 7
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 7
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 

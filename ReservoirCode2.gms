@@ -108,7 +108,7 @@ EQUATIONS
    IResMB Intial Reservoir Mass Balance (volume)
    ResMB(Time)  Reservoir Mass Balance For Time Steps Greater than M1 (Volume)
    RiverMB(Loc,Time) River Mass Balance For all Time Steps (Volume)
-   Sustainability Makes it so that Final Reservoir storage is not less that intial
+   Sustainability Makes it so that Final Reservoir storage is not less that intial;
 
 
 *Maximize Profit

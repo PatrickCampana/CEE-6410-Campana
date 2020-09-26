@@ -1,9 +1,9 @@
 [PROJECT]
 
-[RP:RESERVOIRCODE2]
+[RP:EX2-1-PARAMETRIC]
 1=
 
-[RP:EX2-1-PARAMETRIC]
+[RP:RESERVOIRCODE2]
 1=
 
 [MRUFILES]
@@ -14,7 +14,7 @@
 FILE0=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt
 FILE1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gms
 FILE2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.lst
-FILE3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gms
+FILE3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.lst
 MAXIM=0
 TOP=-9
 LEFT=-13

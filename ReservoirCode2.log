@@ -1,5 +1,5 @@
 
---- Job ReservoirCode2.gms Start 09/25/20 18:50:48 32.2.0 rc62c018 WEX-WEI x86 64bit/MS Windows
+--- Job ReservoirCode2.gms Start 09/25/20 20:02:32 32.2.0 rc62c018 WEX-WEI x86 64bit/MS Windows
 --- Applying:
     C:\GAMS\32\gmsprmNT.txt
 --- GAMS Parameters defined
@@ -21,20 +21,20 @@ Licensee: Small MUD - 5 User License                     G200622/0001AP-GEN
           Utah State University, Utah Water Research Laboratory      DC7087
           C:\GAMS\32\gamslice.txt
 --- Starting compilation
---- ReservoirCode2.gms(179) 3 Mb
---- Starting execution: elapsed 0:00:00.004
---- ReservoirCode2.gms(141) 4 Mb
+--- ReservoirCode2.gms(182) 3 Mb
+--- Starting execution: elapsed 0:00:00.003
+--- ReservoirCode2.gms(144) 4 Mb
 --- Generating LP model ReservoirOptimization
---- ReservoirCode2.gms(150) 4 Mb
+--- ReservoirCode2.gms(153) 4 Mb
 ---   56 rows  31 columns  175 non-zeroes
---- Executing CPLEX (Solvelink=2): elapsed 0:00:00.040
+--- Executing CPLEX (Solvelink=2): elapsed 0:00:00.053
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
 --- GAMS/Cplex Link licensed for continuous and discrete problems.
 Cplex 12.10.0.0
 
 Reading parameter(s) from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt"
->>  objrng all    
+>> 
 >>  rhsrng all
 Finished reading from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt"
 Reading data...
@@ -61,15 +61,13 @@ Optimal solution found.
 Objective :          51.600000
 
 RHS ranging...
-Objective ranging...
 --- Reading solution for model ReservoirOptimization
---- Executing after solve: elapsed 0:00:00.166
---- ReservoirCode2.gms(175) 4 Mb
+--- Executing after solve: elapsed 0:00:00.178
+--- ReservoirCode2.gms(178) 4 Mb
 --- GDX File C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gdx
---- ReservoirCode2.gms(177) 4 Mb
+--- ReservoirCode2.gms(180) 4 Mb
 GDX2XLS          32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
 Output file: C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.xlsx
-gdx2xls error: System Error.  Code: 32.
-The process cannot access the file because it is being used by another process
+(Created backup file)
 *** Status: Normal completion
---- Job ReservoirCode2.gms Stop 09/25/20 18:50:49 elapsed 0:00:01.711
+--- Job ReservoirCode2.gms Stop 09/25/20 20:02:34 elapsed 0:00:01.698
