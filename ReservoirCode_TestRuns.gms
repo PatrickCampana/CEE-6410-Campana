@@ -55,7 +55,7 @@ PARAMETERS
                          Turbines   4/
 
   bge(GLoc) RHS constraint coeffcients the must be met or greater than (volume)
-                         /RiverA  2/
+                         /RiverA  1/
   test(Time);
 
          test(time) = ORD(Time);

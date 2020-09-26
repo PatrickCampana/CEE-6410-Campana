@@ -44,7 +44,6 @@ SETS Loc different locations in the model space  /Reservoir, Spillway, Turbines,
      GLoc(Loc)  Locations which generate Profit /RiverA/
      ILoc (Loc) Locations which Receive external Flows /Reservoir/
      Time Months in period of interest (months) /M1, M2,M3, M4, M5, M6/
-     TimeP1(Time)   Months after M1 /M2,M3, M4, M5, M6/;
 
 
 * 2. DEFINE input data, Flow Constraints Coeffiecents, Monthly Inflow, Profit Coefficients
@@ -78,6 +77,20 @@ PARAMETERS
   Scalar
          IStore Intial Storage In Reservoir /5/;
 
+*2A Create set for incremental adjustment of river flow
+*SETS Inflows /I1*I18/;
+
+*Parameter InflowReq(Inflows) Incremental Inflow Increases (units H2O);
+
+*InflowReq(Inflows) = 1 +0.1*(ord(Inflows)-1);
+
+*Display Inflow Set
+*Display InflowReq;
+
+*Parameters ObjFunc(Inflows) Objective Function values ($)
+*         DecVars (Inflows,Loc,Time) Decision Variable Values (Flows) to Locations
+*         ShadowValsCloc(Inflows, CLoc,Time) Marginals for Cloc locations
+*         ShadowValsGloc(Inflows, GLoc,Time) Marginals for Gloc locations;
 
 * 3. DEFINE the variables: Flow to each location, Benefit
 VARIABLES
@@ -95,10 +108,12 @@ EQUATIONS
    IResMB Intial Reservoir Mass Balance (volume)
    ResMB(Time)  Reservoir Mass Balance For Time Steps Greater than M1 (Volume)
    RiverMB(Loc,Time) River Mass Balance For all Time Steps (Volume)
-   Sustainability Makes it so that Final Reservoir storage is not less that intial;
+   Sustainability Makes it so that Final Reservoir storage is not less that intial
+
 
 *Maximize Profit
 PROFIT..     VPROFIT =E= SUM( (PLoc,Time), c(Ploc,Time)*X(Ploc,Time) );
+
 
 *Equations that Limit Reservoir and Turbine Volumes For each time step, defines two sets of equations, 12 total
 LFlow_CONSTRAINTS(CLoc,Time)..  X(CLoc,Time) =L= ble(Cloc);
@@ -120,15 +135,48 @@ Sustainability.. X('Reservoir','M6') =G= IStore;
 
 
 * 5. DEFINE the MODEL from the EQUATIONS
-MODEL ReservoirOptimization /ALL/;
-*Altnerative way to write (include all previously defined equations)
-*MODEL /ALL/;
+MODEL
+ReservoirOptimization /ALL/;
+*Removed objective and RHS range analysis
+ReservoirOptimization.OptFile = 1;
+
+*Show Slack Instead of lower or upper bound
+option solslack = 1;
+*Loop (Inflows,
+*Parametrically set the model input parameter of River Inflow Requirment for this run
+*       bge('RiverA') = InflowReq(Inflows);
+
+*        Initialize decision Variables
+*       X.L(Loc,Time) = 0;
+
+*        Solve Model
+SOLVE ReservoirOptimization USING LP MAXIMIZING VPROFIT;
+
+*        Record Incremental Solution Changes
+*        Objective Function Value
+*       ObjFunc(Inflows) = VPROFIT.L;
+*        Decision Variables Value
+*         DecVars (Inflows,Loc,Time)= X.L(Loc,time);
+*        Track Turbines Flow
+*         ShadowValsCloc(Inflows, CLoc, time) =  LFlow_CONSTRAINTS.M(CLoc,Time);
+*         ShadowValsGloc(Inflows, GLoc,Time) =   GFlow_CONSTRAINTS.M (GLoc, time);
+*      );
+*        Finish Loop
+
+
+
+* Print out results from loop
+*DISPLAY InflowReq, ObjFunc, DecVars, ShadowValsCloc, ShadowValsGloc;
 
 * 6. SOLVE the MODEL
 * Solve the ReservoirOptimization model using a Linear Programming Solver (see File=>Options=>Solvers)
 *     to maximize VPROFIT
-option solslack = 1;
 
-SOLVE ReservoirOptimization USING LP MAXIMIZING VPROFIT;
 
 * 6. CLick File menu => RUN (F9) or Solve icon and examine solution report in .LST file
+
+Execute_Unload "ReservoirCode2.gdx";
+* Dump the gdx file to an Excel workbook
+Execute "gdx2xls ReservoirCode2.gdx"
+* To open the GDX file in the GAMS IDE, select File => Open.
+* In the Open window, set Filetype to .gdx and select the file.

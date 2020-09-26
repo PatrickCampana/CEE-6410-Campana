@@ -1,34 +1,42 @@
---- Job ReservoirCode2.gms Start 09/24/20 22:34:31 32.2.0 rc62c018 WEX-WEI x86 64bit/MS Windows
+
+--- Job ReservoirCode2.gms Start 09/25/20 18:50:48 32.2.0 rc62c018 WEX-WEI x86 64bit/MS Windows
 --- Applying:
     C:\GAMS\32\gmsprmNT.txt
 --- GAMS Parameters defined
-    Input "C:\Users\Patrick Campana\Documents\WaterResourcesSystemsAnalysis\GitHubRepository\CEE-6410-Campana\ReservoirCode2.gms"
+    Input "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gms"
+    PageWidth 80
     PageSize 0
-    ScrDir "C:\Users\Patrick Campana\Documents\WaterResourcesSystemsAnalysis\GitHubRepository\CEE-6410-Campana\225a\"
+    PageContr 3
+    Action CE
+    ScrDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\225a\"
     SysDir C:\GAMS\32\
+    WorkDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\"
     LogOption 3
-    ErrMsg 1
+    DFormat 0
+    TFormat 0
     ErrorLog 99
     IDE 1
-    GDX "C:\Users\Patrick Campana\Documents\WaterResourcesSystemsAnalysis\GitHubRepository\CEE-6410-Campana\ReservoirCode2.gdx"
-    LstTitleLeftAligned 1
 GAMS 32.2.0   Copyright (C) 1987-2020 GAMS Development. All rights reserved
 Licensee: Small MUD - 5 User License                     G200622/0001AP-GEN
           Utah State University, Utah Water Research Laboratory      DC7087
-          C:\Users\Patrick Campana\Documents\GAMS\gamslice.txt
+          C:\GAMS\32\gamslice.txt
 --- Starting compilation
---- ReservoirCode2.gms(134) 3 Mb
---- Starting execution: elapsed 0:00:00.000
---- ReservoirCode2.gms(130) 4 Mb
+--- ReservoirCode2.gms(179) 3 Mb
+--- Starting execution: elapsed 0:00:00.004
+--- ReservoirCode2.gms(141) 4 Mb
 --- Generating LP model ReservoirOptimization
---- ReservoirCode2.gms(132) 4 Mb
+--- ReservoirCode2.gms(150) 4 Mb
 ---   56 rows  31 columns  175 non-zeroes
---- Executing CPLEX (Solvelink=2): elapsed 0:00:00.018
+--- Executing CPLEX (Solvelink=2): elapsed 0:00:00.040
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
 --- GAMS/Cplex Link licensed for continuous and discrete problems.
 Cplex 12.10.0.0
 
+Reading parameter(s) from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt"
+>>  objrng all    
+>>  rhsrng all
+Finished reading from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt"
 Reading data...
 Starting Cplex...
 Space for names approximately 0.00 Mb
@@ -47,12 +55,21 @@ Iteration log . . .
 Iteration:     1   Dual infeasibility =             9.500000
 Iteration:    11   Dual objective     =            66.200000
 LP status(1): optimal
-Cplex Time: 0.00sec (det. 0.08 ticks)
+Cplex Time: 0.08sec (det. 0.08 ticks)
 
 Optimal solution found.
 Objective :          51.600000
 
+RHS ranging...
+Objective ranging...
 --- Reading solution for model ReservoirOptimization
---- GDX File C:\Users\Patrick Campana\Documents\WaterResourcesSystemsAnalysis\GitHubRepository\CEE-6410-Campana\ReservoirCode2.gdx
+--- Executing after solve: elapsed 0:00:00.166
+--- ReservoirCode2.gms(175) 4 Mb
+--- GDX File C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gdx
+--- ReservoirCode2.gms(177) 4 Mb
+GDX2XLS          32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+Output file: C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.xlsx
+gdx2xls error: System Error.  Code: 32.
+The process cannot access the file because it is being used by another process
 *** Status: Normal completion
---- Job ReservoirCode2.gms Stop 09/24/20 22:34:31 elapsed 0:00:00.089
+--- Job ReservoirCode2.gms Stop 09/25/20 18:50:49 elapsed 0:00:01.711
