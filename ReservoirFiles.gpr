@@ -1,0 +1,22 @@
+[PROJECT]
+
+[RP:EX2-1-PARAMETRIC]
+1=
+
+[RP:RESERVOIRCODE2]
+1=
+
+[MRUFILES]
+1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex2-1-parametric.gms
+2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\cplex.opt
+
+[OPENWINDOW_1]
+FILE0=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt
+FILE1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gms
+FILE2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.lst
+FILE3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.lst
+MAXIM=0
+TOP=-9
+LEFT=-13
+HEIGHT=919
+WIDTH=960
