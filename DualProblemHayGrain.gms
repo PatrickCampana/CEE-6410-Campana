@@ -63,11 +63,11 @@ POSITIVE VARIABLES X, Y, YLand;
 
 * 4. COMBINE variables and data in equations
 EQUATIONS
-   PROFIT Total profit ($) and objective function value
-   WATER_CONSTRAIN(time) water resource Constraints
+  PROFIT Total profit ($) and objective function value
+  WATER_CONSTRAIN(time) water resource Constraints
    LAND_CONSTRAIN land resource constraint
-   REDCOSTWATER(crop)
-   REDCOST;
+   REDCOSTWATER(crop) reduced cost constraints
+   REDCOST reduced cost objective function;
 
 *Primal Equations
 PROFIT..                 VPROFIT =E= SUM(crop,c(crop)*X(crop));
@@ -80,12 +80,13 @@ REDCOST..               Land*YLand+SUM(time,Y(time)*bb(time)) =E= VREDCOST;
 
 * 5. DEFINE the MAX PROFIT MODEL from the PRIMAL EQUATIONS
 MODEL CROPS_PRIMAL /PROFIT, WATER_CONSTRAIN, LAND_CONSTRAIN/;
-
+CROPS_PRIMAL.OptFile = 1;
 option solslack = 1;
 
 * 6. DEFINE THE REDUCED COST MODEL FROM THE DUAL EQUATIONS
 MODEL CROPS_DUAL /REDCOSTWATER, REDCOST/;
 option solslack = 1;
+CROPS_DUAL.OptFile = 1;
 
 * 7. Solve CROPS_PRIMAL via MAXIMIZATION
 SOLVE CROPS_PRIMAL USING LP MAXIMIZING VPROFIT;
