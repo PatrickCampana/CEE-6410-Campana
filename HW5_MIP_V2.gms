@@ -34,8 +34,8 @@ Patrickcampana555@gmail.com
 10/2/2020
 
 KEY ASSUMPTIONS
-         1. 92 days per season
-         2. -Pump is not operated outside of Seasons 1 and 2
+         1. 180 days per season
+         2. 5 days of no irrigation per year
 $offtext
 
 * 1. DEFINE MODEL DIMENSIONS
@@ -45,7 +45,7 @@ SETS Loc Locations in Model / Res "Reservoir", Divert "Irrigation Diversion from
      CLoc Constraint Locations /SD "Small Dam", LD "Large Dam", P "Pump"/
 
      Time two seasons that are modeled /T1, T2/;
-*NOTE: ASSUMING THAT SEASONS T1 and T2 are each 92 days long
+*NOTE: ASSUMING THAT SEASONS T1 and T2 are each 180 days long
 
 * 2. DEFINE INPUT DATA
 PARAMETERS
@@ -58,8 +58,8 @@ PARAMETERS
     MaxCap(CLoc) Maximum capacity of Irrigation source per season (acft)
          /SD      300
           LD      700
-          P       202.4/
-* 2.2 acft/day * 92 day/season = 202.4 acrft per season
+          P       396/
+* 2.2 acft/day * 180 day/season = 396 acrft per season
 
     IrrDEM(Time) Irrigation Demands in each month (acft per acre)
          /T1     1
@@ -83,8 +83,8 @@ PARAMETERS
 SCALARS
          OCP  Operating cost pump ($ per acft pumped)    /20/
          IrrP Profit ($ per acre of crops irrigated) /300/
-         G_H2O River Ground Water Recharge Per Season (Acft per season) /184/;
-*RIVER GROUND WATER RECHARGE, ASSUMING 92 Days per season then 2.0 acft/day * 92 day = 184 acft per season
+         G_H2O River Ground Water Recharge Per Season (Acft per season) /360/;
+*RIVER GROUND WATER RECHARGE, ASSUMING 180 Days per season then 2.0 acft/day * 180 day = 360 acft per season
 
 *3. Define Variables
 VARIABLES
@@ -148,7 +148,7 @@ NetProfit..  300*AI-SUM(CLoc, I(CLoc)*CapCost(CLoc))-OCP*SUM(Time,X('Pump',Time)
 
 *5. DEFINE the MODEL from the Equations
 MODEL IrrigationMaximization /ALL/;
-
+*IrrigationMaximization.OptFile = 1;
 *        Display Slack Variables Rather Than LB and UB
          option solslack = 1;
 
