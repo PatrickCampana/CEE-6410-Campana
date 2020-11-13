@@ -1,0 +1,1676 @@
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 11/02/20 11:18:01 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+      CEE 6410 Fall 2020
+      Modification of HW #4 Reservoir Optimization Problem to Use Monte Carlo Me
+      thods
+       
+      How do uncertain initial reservoir storage and inflows affect total net be
+      nefits?
+       
+      Assume:
+        - Initial storage varies uniformly between 0.5 and 10 units
+        - Inflow in month 1 varies according to observations (Table 1)
+        - Inflows in subsequent months exhibit lag-1 correlation (Table 2)
+        - Instream flow at A must be at least 1 unit or 20% of largest simulated
+       flow
+       
+      Use 250 samples
+       
+      Table 1. Flow likelihood in Month 1
+      Flow     Prob. (%)  Cum. (%)
+      1        0.1        0.1
+      3        0.3        0.4
+      5        0.4        0.8
+      8        0.2        1.0
+       
+      Table 2. Transitional probabilities of flow from time t to time t+1
+                         Flow in Time t+1
+                         1        3           5         8
+      Flow    1        0.2        0.5        0.2        0.1
+      in      3        0.2        0.3        0.3        0.2
+      Time    5        0.1        0.4        0.4        0.1
+       t      8        0.2        0.3        0.4        0.1
+       
+      Show the probability distribution of total net benefits
+       
+      THE ORIGINAL PROBLEM: A reservoir is designed to provide hydropower and wa
+      ter for irrigation.
+      The turbine has a capacity of 4 units of water per month,
+      water downstream must be at least one unit, irrigation will use all water
+      that is available from the turbine and spillover.
+      The reservoir must be kept at a capacity under 9 units and the end storage
+       is
+      greater than or equal to 5 units.
+       
+      PART I sets ups the original deterministic linear programming problem with
+       the
+             base case parameter values
+      PART II generates the Monte Carlo samples and solves the model 250 times f
+      or each set of
+           sampled values
+       
+      Programmed by David E. Rosenberg
+      October 26, 2015
+      Updated October 23, 2018
+      david.rosenberg@usu.edu
+  49   
+  50  *****************************************
+  51  ** PART I. Original Deterministic Linear Programmign Problem
+  52  ********************************
+  53   
+  54  *1. Define the sets
+  55  SETS t month /m1*m6/
+  56       l network locations
+  57           /res "Reservoir", hyd "Hydropower", "irr" Irrigation", spi "Spill
+      ", AAA "At_A"/;
+  58   
+  59  *2. Define th input data
+  60  PARAMETERS
+  61     inflow(t) reservoir inflow (volume)
+  62          /m1 2, m2 2, m3 3, m4 4, m5 3, m6 2/
+  63     hb(t) hydropower benefits ($ per volume)
+  64          /m1 1.6, m2 1.7, m3 1.8, m4 1.9, m5 2.0, m6 2.0/
+  65     ib(t) Irrigation benefits ($ per volume)
+  66          /m1 1.0, m2 1.2, m3 1.9, m4 2.0, m5 2.2, m6 2.2/
+  67            ;
+  68   
+  69  SCALARS
+  70     MaxStor Maximum reservoir storage (volume) /9/
+  71     InitStor Initital reservoir storage (volume) /5/
+  72     FlowReq  Minimum required flow at A (volume) /1/
+  73     TurbCap  Turbine capacity (volume) /4/;
+  74   
+  75   
+  76  *3. Define the decision variables
+  77  VARIABLES
+  78     X(l,t)  Flow or storage in network at location l at time t (volume)
+  79     TotalBen   Total benefits ($);
+  80   
+  81  Positive Variables X;
+  82   
+  83  *4. Define the equations
+  84  EQUATIONS
+  85     WatBENEFIT Total water use benefits from allocation ($ ) and objective 
+      function
+  86     ResBalance(t) Reservoir mass balance in time t (volume)
+  87     ResCapacity(t) Upper limit on reservoir storage (volume)
+  88     EndStorage Ending reservoir storage (volume)
+  89     HydropowerCap(t) Hydropower capacity for each month (volume)
+  90     RiverBalance(t)  Flow balance in river at irrigation diversion (volume)
+  91     MinFlowA(t)      Minimum required flow at a (volume) ;
+  92   
+  93  *Equations for LP formulation
+  94  WatBENEFIT..        TotalBen =E= SUM(t, hb(t)*X("hyd",t) + ib(t)*X("irr",t
+      ));
+  95  ResBalance(t)..     X("res",t) =E= inflow(t) - X("hyd",t) - X("spi",t) +
+  96                                 InitStor$(ord(t) eq 1) +
+  97                                 X("res",t-1)$(ord(t) gt 1);
+  98  ResCapacity(t) ..   X("res",t) =L= MaxStor;
+  99  EndStorage..        sum(t$(ord(t) eq card(t)),X("res",t)) =G= InitStor;
+ 100  HydropowerCap(t)..  X("hyd",t) =L=  TurbCap;
+ 101  RiverBalance(t)..   X("spi",t) + X("hyd",t) =E= X("irr",t) + X("AAA",t);
+ 102  MinFlowA(t)..      X("AAA",t) =G= FlowReq;
+ 103   
+ 104  *5. Define the models
+ 105  *Linear Program for single maximize economic benefits objective
+ 106  MODEL EconBen Single Objective LP Economic Benefits
+ 107           /WatBenefit,ResBalance,ResCapacity,EndStorage,HydropowerCap,River
+      Balance,MinFlowA/;
+ 108   
+ 109  *Check on prior single-objective deterministic linear programming formulat
+      ion
+ 110  SOLVE EconBen USING LP Maximizing TotalBen;
+ 111   
+ 112  *****************************************
+ 113  ** PART II. Monte Carlo Simulation
+ 114  ********************************
+ 115   
+ 116  * Define the uncertain parameters
+ 117  Set fs Flow states /fs1*fs4/
+ 118      s  Monte carlo simultions /s1*s250/;
+ 119   
+ 120  ALIAS (fs, fss);
+ 121  ALIAS (fs, fsss);
+ 122   
+ 123  PARAMETERS
+ 124  *   Minimum and Maximum range for initial storage
+ 125      InitStorMin Minimum value of initial storage /0.5/
+ 126      InitStorMax Maximum value of initial storage /10/
+ 127  *   Flow values and probabilities for inflow
+ 128      FlowVals(fs) Flow value of state fs in month 1
+ 129           /fs1  1, fs2   3, fs3 5, fs4  8/
+ 130      FlowProb(fs) Probability of flow state fs in month 1
+ 131           /fs1  0.1, fs2   0.3, fs3 0.4, fs4  0.2/
+ 132      FlowCumProb(fs) Cumulative probability of flow less than or equal to f
+      low value fs in month 1
+ 133      CumFlowTranProb(fs,fss) Cumulative probability of moving from flow val
+      ue fs in Time t to flow value fs2 in time t+1;
+ 134   
+ 135  TABLE FlowTransitionProb(fs,fss) Probability of moving from flow value fs 
+      in Time t to flow value fs2 in Time t+1
+ 136         fs1        fs2        fs3        fs4
+ 137  fs1    0.2        0.5        0.2        0.1
+ 138  fs2    0.2        0.3        0.3        0.2
+ 139  fs3    0.1        0.4        0.4        0.1
+ 140  fs4    0.2        0.3        0.4        0.1;
+ 141   
+ 142  *Calculate the cumulative probability of flow in month 1 from the probabil
+      ity. Sum up
+ 143  * all the probabilities from fs1, fs2, ... to fss
+ 144  FlowCumProb(fs) = sum(fss$(ord(fss) le ord(fs)),FlowProb(fss));
+ 145  *Calculate the cumulative probability of flow transitions from time t to t
+      +1.
+ 146  *Sum rows from column fss1, fss2, to fsss
+ 147  *Same as FlowCumProb but for the matrix.
+ 148  CumFlowTranProb(fs,fss) = sum(fsss$(ord(fsss) le ord(fss)), FlowTransition
+      Prob(fs,fsss));
+ 149   
+ 150  Display FlowCumProb, CumFlowTranProb;
+ 151   
+ 152  *Parameters to store Monte Carlo sampled values
+ 153  PARAMETERS
+ 154     InitStorS(s) Sampled initial reservoir storage
+ 155     CDFSampleS(s,t) Sampled cumulative distribution value for calculating i
+      nflow in time t
+ 156     FlowStateS(s,t) Sampled flow state in time t (integer corresponding to 
+      element in fs)
+ 157     InflowS(s,t) Sampled reservoir inflows
+ 158     InflowOrig(t) Original inflows
+ 159     hbS(s) Sampled hydropower benefits
+ 160     FlowAtAS(s)  Calculated flow requirement at A;
+ 161   
+ 162  *Sample initial storage values in scenario s according to a uniform distri
+      bution
+ 163  *between the minimum and maximum initial storage values (all values in ran
+      ge
+ 164  *equally likely)
+ 165  InitStorS(s) = uniform(InitStorMin, InitStorMax);
+ 166  hbS(s) = uniform(1.7,18);
+ 167  *Sample flow in each Time according to the emperical distribution. Use the
+       inverse
+ 168  * sampling method. First sample a cumulative distribution value between 0 
+      and 1.
+ 169  * Then map that CDF value to the flow state
+ 170  * Sample the cdf value
+ 171  CDFSampleS(s,t) = uniform(0,1);
+ 172  * For the first timestep, search over the other flow states and find the s
+      tate where the sampled cdf value actually
+ 173  * falls in
+ 174  FlowStateS(s,t)$(ord(t) eq 1) = max(1,
+ 175         sum(fs$((ord(fs) gt 1) and (CDFSampleS(s,t) gt FlowCumProb(fs-1)) a
+      nd
+ 176                 (CDFSampleS(s,t) le FlowCumProb(fs))),ord(fs)));
+ 177   
+ 178  *Sample flows in Times 2 and up according to the transition probabilities.
+       Again map back into
+ 179  * a flow state
+ 180  LOOP(t,
+ 181    FlowStateS(s,t)$(ord(t) gt 1) = max(1,
+ 182         sum(fss$((ord(fss) gt 1) and (CDFSampleS(s,t) gt sum(fs$(ord(fs) eq
+       FlowStateS(s,t-1)),CumFlowTranProb(fs,fss-1))) and
+ 183                (CDFSampleS(s,t) le sum(fs$(ord(fs) eq FlowStateS(s,t-1)),Cu
+      mFlowTranProb(fs,fss)))),ord(fss)));
+ 184    );
+ 185   
+ 186  *Convert from flow states into flows
+ 187  InflowS(s,t) = sum(fs$(ord(fs) eq FlowStateS(s,t)),FlowVals(fs));
+ 188   
+ 189  *Calculate Flow at A as the maximum of 1 or 20% of the maximum generated i
+      nflow
+ 190  FlowAtAS(s) = max(1,0.2*smax(t,InflowS(s,t)));
+ 191   
+ 192  *These are all our Monte Carlo sampled values for each scenario
+ 193  Display InitStorS, hbS, CDFSampleS,FlowStateS,InflowS, FlowAtAS;
+ 194   
+ 195  * Parameters to record Monte-Carlo Optimized results
+ 196  PARAMETERS
+ 197    NetBenS(s) Net benefits ($)
+ 198    ModStat(s) Model status
+ 199    SolStat(s) Solve status;
+ 200   
+ 201  *Store the original inflows;
+ 202  InflowOrig(t) = inflow(t);
+ 203   
+ 204  *Surpress solution printing of model results because
+ 205  *we will have a large number of models
+ 206  EconBen.solprint = 2;
+ 207   
+ 208  * Run the Monte-Carlo Simulations
+ 209  Loop(s,
+ 210  *   Read in the sampled parameter values
+ 211      InitStor = InitStorS(s);
+ 212      Inflow(t) = InflowS(s,t);
+ 213      FlowReq = FlowAtAS(s);
+ 214      hb('m6') = hbS(s);
+ 215  *   Set the decision variable values to zero as initial solution
+ 216  *   Not necessary for an LP, but would need for NLPs
+ 217      X.L(l,t) = 0;
+ 218   
+ 219  *  Solve the model
+ 220     SOLVE EconBen USING LP Maximizing TotalBen;
+ 221   
+ 222  *  Store results from current run
+ 223     NetBenS(s) = TotalBen.L;
+ 224     ModStat(s) = EconBen.ModelStat;
+ 225     SolStat(s) = EconBen.SolveStat;
+ 226     );
+ 227   
+ 228  Display NetBenS,ModStat,SolStat;
+ 229   
+ 230  Execute_Unload "HW4_mc.gdx";
+ 231  * Dump the gdx file to an Excel workbook
+ 232  Execute "gdx2xls HW4_mc.gdx"
+ 233   
+ 234   
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 11/02/20 11:18:01 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE EconBen Using LP From line 110
+
+
+---- WatBENEFIT  =E=  Total water use benefits from allocation ($ ) and objectiv
+                      e function
+
+WatBENEFIT..  - 1.6*X(hyd,m1) - 1.7*X(hyd,m2) - 1.8*X(hyd,m3) - 1.9*X(hyd,m4)
+     
+      - 2*X(hyd,m5) - 2*X(hyd,m6) - X(irr,m1) - 1.2*X(irr,m2) - 1.9*X(irr,m3)
+     
+      - 2*X(irr,m4) - 2.2*X(irr,m5) - 2.2*X(irr,m6) + TotalBen =E= 0 ; (LHS = 0)
+     
+
+---- ResBalance  =E=  Reservoir mass balance in time t (volume)
+
+ResBalance(m1)..  X(res,m1) + X(hyd,m1) + X(spi,m1) =E= 7 ;
+     
+      (LHS = 0, INFES = 7 ****)
+     
+ResBalance(m2)..  - X(res,m1) + X(res,m2) + X(hyd,m2) + X(spi,m2) =E= 2 ;
+     
+      (LHS = 0, INFES = 2 ****)
+     
+ResBalance(m3)..  - X(res,m2) + X(res,m3) + X(hyd,m3) + X(spi,m3) =E= 3 ;
+     
+      (LHS = 0, INFES = 3 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- ResCapacity  =L=  Upper limit on reservoir storage (volume)
+
+ResCapacity(m1)..  X(res,m1) =L= 9 ; (LHS = 0)
+     
+ResCapacity(m2)..  X(res,m2) =L= 9 ; (LHS = 0)
+     
+ResCapacity(m3)..  X(res,m3) =L= 9 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage  =G=  Ending reservoir storage (volume)
+
+EndStorage..  X(res,m6) =G= 5 ; (LHS = 0, INFES = 5 ****)
+     
+
+---- HydropowerCap  =L=  Hydropower capacity for each month (volume)
+
+HydropowerCap(m1)..  X(hyd,m1) =L= 4 ; (LHS = 0)
+     
+HydropowerCap(m2)..  X(hyd,m2) =L= 4 ; (LHS = 0)
+     
+HydropowerCap(m3)..  X(hyd,m3) =L= 4 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- RiverBalance  =E=  Flow balance in river at irrigation diversion (volume)
+
+RiverBalance(m1)..  X(hyd,m1) - X(irr,m1) + X(spi,m1) - X(AAA,m1) =E= 0 ;
+     
+      (LHS = 0)
+     
+RiverBalance(m2)..  X(hyd,m2) - X(irr,m2) + X(spi,m2) - X(AAA,m2) =E= 0 ;
+     
+      (LHS = 0)
+     
+RiverBalance(m3)..  X(hyd,m3) - X(irr,m3) + X(spi,m3) - X(AAA,m3) =E= 0 ;
+     
+      (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- MinFlowA  =G=  Minimum required flow at a (volume)
+
+MinFlowA(m1)..  X(AAA,m1) =G= 1 ; (LHS = 0, INFES = 1 ****)
+     
+MinFlowA(m2)..  X(AAA,m2) =G= 1 ; (LHS = 0, INFES = 1 ****)
+     
+MinFlowA(m3)..  X(AAA,m3) =G= 1 ; (LHS = 0, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 11/02/20 11:18:01 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE EconBen Using LP From line 110
+
+
+---- X  Flow or storage in network at location l at time t (volume)
+
+X(res,m1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       ResBalance(m1)
+       -1       ResBalance(m2)
+        1       ResCapacity(m1)
+
+X(res,m2)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       ResBalance(m2)
+       -1       ResBalance(m3)
+        1       ResCapacity(m2)
+
+X(res,m3)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       ResBalance(m3)
+       -1       ResBalance(m4)
+        1       ResCapacity(m3)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- TotalBen  Total benefits ($)
+
+TotalBen
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       WatBENEFIT
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 11/02/20 11:18:01 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE EconBen Using LP From line 110
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           7     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.031 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 11/02/20 11:18:01 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE EconBen Using LP From line 110
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   EconBen             OBJECTIVE  TotalBen
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  110
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE               51.6000
+
+ RESOURCE USAGE, LIMIT          0.079 10000000000.000
+ ITERATION COUNT, LIMIT        16    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(1): optimal
+Cplex Time: 0.00sec (det. 0.06 ticks)
+Optimal solution found.
+Objective :          51.600000
+
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU WatBENEFIT      .         .         .        1.000      
+
+  WatBENEFIT  Total water use benefits from allocation ($ ) and objective functi
+              on
+
+---- EQU ResBalance  Reservoir mass balance in time t (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+m1     7.000     7.000     7.000     3.700      
+m2     2.000     2.000     2.000     3.700      
+m3     3.000     3.000     3.000     3.700      
+m4     4.000     4.000     4.000     3.700      
+m5     3.000     3.000     3.000     3.700      
+m6     2.000     2.000     2.000     3.700      
+
+---- EQU ResCapacity  Upper limit on reservoir storage (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+m1     -INF      6.000     9.000      .         
+m2     -INF      7.000     9.000      .         
+m3     -INF      8.000     9.000      .         
+m4     -INF      8.000     9.000      .         
+m5     -INF      7.000     9.000      .         
+m6     -INF      5.000     9.000      .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorage     5.000     5.000     +INF     -3.700      
+
+  EndStorage  Ending reservoir storage (volume)
+
+---- EQU HydropowerCap  Hydropower capacity for each month (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+m1     -INF      1.000     4.000      .         
+m2     -INF      1.000     4.000      .         
+m3     -INF      2.000     4.000      .         
+m4     -INF      4.000     4.000     0.200      
+m5     -INF      4.000     4.000     0.500      
+m6     -INF      4.000     4.000     0.500      
+
+---- EQU RiverBalance  Flow balance in river at irrigation diversion (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+m1      .         .         .       -2.100      
+m2      .         .         .       -2.000      
+m3      .         .         .       -1.900      
+m4      .         .         .       -2.000      
+m5      .         .         .       -2.200      
+m6      .         .         .       -2.200      
+
+---- EQU MinFlowA  Minimum required flow at a (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+m1     1.000     1.000     +INF     -2.100      
+m2     1.000     1.000     +INF     -2.000      
+m3     1.000     1.000     +INF     -1.900      
+m4     1.000     1.000     +INF     -2.000      
+m5     1.000     1.000     +INF     -2.200      
+m6     1.000     1.000     +INF     -2.200      
+
+---- VAR X  Flow or storage in network at location l at time t (volume)
+
+          LOWER     LEVEL     UPPER    MARGINAL
+
+res.m1      .        6.000     +INF       .         
+res.m2      .        7.000     +INF       .         
+res.m3      .        8.000     +INF       .         
+res.m4      .        8.000     +INF       .         
+res.m5      .        7.000     +INF       .         
+res.m6      .        5.000     +INF       .         
+hyd.m1      .        1.000     +INF       .         
+hyd.m2      .        1.000     +INF       .         
+hyd.m3      .        2.000     +INF       .         
+hyd.m4      .        4.000     +INF       .         
+hyd.m5      .        4.000     +INF       .         
+hyd.m6      .        4.000     +INF       .         
+irr.m1      .         .        +INF     -1.100      
+irr.m2      .         .        +INF     -0.800      
+irr.m3      .        1.000     +INF       .         
+irr.m4      .        3.000     +INF       .         
+irr.m5      .        3.000     +INF       .         
+irr.m6      .        3.000     +INF       .         
+spi.m1      .         .        +INF     -1.600      
+spi.m2      .         .        +INF     -1.700      
+spi.m3      .         .        +INF     -1.800      
+spi.m4      .         .        +INF     -1.700      
+spi.m5      .         .        +INF     -1.500      
+spi.m6      .         .        +INF     -1.500      
+AAA.m1      .        1.000     +INF       .         
+AAA.m2      .        1.000     +INF       .         
+AAA.m3      .        1.000     +INF       .         
+AAA.m4      .        1.000     +INF       .         
+AAA.m5      .        1.000     +INF       .         
+AAA.m6      .        1.000     +INF       .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR TotalBen       -INF     51.600     +INF       .         
+
+  TotalBen  Total benefits ($)
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 11/02/20 11:18:01 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    150 PARAMETER FlowCumProb  Cumulative probability of flow less than or e
+                                   qual to flow value fs in month 1
+
+fs1 0.100,    fs2 0.400,    fs3 0.800,    fs4 1.000
+
+
+----    150 PARAMETER CumFlowTranProb  Cumulative probability of moving from flo
+                                       w value fs in Time t to flow value fs2 in
+                                       time t+1
+
+            fs1         fs2         fs3         fs4
+
+fs1       0.200       0.700       0.900       1.000
+fs2       0.200       0.500       0.800       1.000
+fs3       0.100       0.500       0.900       1.000
+fs4       0.200       0.500       0.900       1.000
+
+
+----    193 PARAMETER InitStorS  Sampled initial reservoir storage
+
+s1   2.132,    s2   8.511,    s3   5.729,    s4   3.361,    s5   3.276
+s6   2.629,    s7   3.823,    s8   8.635,    s9   1.138,    s10  5.252
+s11  9.982,    s12  5.998,    s13  9.916,    s14  7.741,    s15  1.742
+s16  6.577,    s17  2.015,    s18  2.876,    s19  6.855,    s20  4.636
+s21  3.917,    s22  3.839,    s23  1.749,    s24  1.926,    s25  6.097
+s26  8.393,    s27  2.693,    s28  6.824,    s29  7.871,    s30  3.385
+s31  1.550,    s32  5.273,    s33  2.022,    s34  8.788,    s35  3.019
+s36  3.215,    s37  6.143,    s38  7.366,    s39  6.468,    s40  4.906
+s41  4.426,    s42  1.618,    s43  3.485,    s44  0.942,    s45  3.716
+s46  2.230,    s47  6.634,    s48  5.827,    s49  7.815,    s50  3.329
+s51  6.781,    s52  7.680,    s53  6.461,    s54  3.197,    s55  1.321
+s56  1.474,    s57  6.592,    s58  5.680,    s59  0.799,    s60  8.027
+s61  1.191,    s62  2.169,    s63  5.494,    s64  7.627,    s65  2.192
+s66  0.824,    s67  6.059,    s68  6.402,    s69  4.199,    s70  3.908
+s71  2.809,    s72  2.841,    s73  1.740,    s74  9.368,    s75  4.109
+s76  7.942,    s77  3.350,    s78  1.692,    s79  7.614,    s80  1.158
+s81  2.419,    s82  0.548,    s83  3.061,    s84  5.249,    s85  1.937
+s86  2.155,    s87  3.641,    s88  3.511,    s89  3.560,    s90  9.658
+s91  9.939,    s92  4.014,    s93  4.042,    s94  7.834,    s95  4.268
+s96  9.174,    s97  1.636,    s98  7.487,    s99  1.026,    s100 5.975
+s101 0.988,    s102 0.557,    s103 4.312,    s104 5.439,    s105 6.474
+s106 2.645,    s107 4.263,    s108 3.122,    s109 1.948,    s110 9.395
+s111 4.515,    s112 1.779,    s113 4.168,    s114 4.059,    s115 3.051
+s116 9.510,    s117 2.295,    s118 3.326,    s119 1.208,    s120 4.313
+s121 1.466,    s122 4.147,    s123 3.579,    s124 2.325,    s125 1.568
+s126 6.167,    s127 5.359,    s128 0.928,    s129 7.939,    s130 9.485
+s131 6.166,    s132 6.270,    s133 3.944,    s134 6.144,    s135 6.959
+s136 5.313,    s137 2.013,    s138 6.740,    s139 5.477,    s140 1.682
+s141 9.874,    s142 2.667,    s143 6.919,    s144 7.879,    s145 9.358
+s146 2.412,    s147 3.323,    s148 2.374,    s149 2.840,    s150 6.642
+s151 7.482,    s152 1.312,    s153 1.928,    s154 4.625,    s155 2.276
+s156 7.081,    s157 7.748,    s158 1.971,    s159 4.199,    s160 7.107
+s161 8.535,    s162 6.321,    s163 9.772,    s164 0.755,    s165 2.281
+s166 1.328,    s167 5.634,    s168 1.705,    s169 7.473,    s170 1.576
+s171 5.139,    s172 8.058,    s173 5.174,    s174 5.569,    s175 0.601
+s176 5.667,    s177 4.786,    s178 9.766,    s179 2.247,    s180 2.054
+s181 0.734,    s182 2.189,    s183 1.083,    s184 0.658,    s185 8.439
+s186 6.216,    s187 0.757,    s188 2.363,    s189 9.532,    s190 3.688
+s191 6.145,    s192 2.962,    s193 6.586,    s194 1.975,    s195 4.870
+s196 4.237,    s197 8.152,    s198 5.639,    s199 4.212,    s200 5.799
+s201 9.361,    s202 3.813,    s203 0.579,    s204 9.514,    s205 5.933
+s206 3.669,    s207 9.846,    s208 7.781,    s209 1.546,    s210 9.951
+s211 6.013,    s212 2.081,    s213 6.612,    s214 3.771,    s215 9.167
+s216 9.051,    s217 0.654,    s218 4.002,    s219 6.812,    s220 6.137
+s221 0.828,    s222 8.497,    s223 9.355,    s224 5.326,    s225 3.346
+s226 5.218,    s227 0.927,    s228 7.850,    s229 5.563,    s230 7.594
+s231 7.340,    s232 6.500,    s233 1.592,    s234 9.726,    s235 7.214
+s236 9.870,    s237 8.621,    s238 6.404,    s239 7.162,    s240 7.158
+s241 8.012,    s242 6.297,    s243 1.016,    s244 5.109,    s245 0.999
+s246 7.137,    s247 2.350,    s248 2.647,    s249 8.230,    s250 9.921
+
+
+----    193 PARAMETER hbS  Sampled hydropower benefits
+
+s1   13.936,    s2   13.409,    s3    1.710,    s4    6.001,    s5   15.128
+s6   15.058,    s7   15.725,    s8    5.167,    s9    9.146,    s10   2.325
+s11   6.965,    s12   8.870,    s13   6.840,    s14   3.897,    s15  14.919
+s16   8.494,    s17   4.011,    s18   9.288,    s19   6.313,    s20  16.300
+s21   2.750,    s22   8.458,    s23   7.268,    s24   9.333,    s25  12.176
+s26  12.190,    s27   7.203,    s28   3.343,    s29  16.465,    s30   5.243
+s31  16.678,    s32   9.064,    s33   3.166,    s34   7.799,    s35   8.464
+s36   8.288,    s37   3.520,    s38  13.943,    s39  14.795,    s40   2.086
+s41   9.538,    s42   6.241,    s43  16.396,    s44   1.987,    s45  12.801
+s46  17.200,    s47  16.373,    s48  16.350,    s49  15.954,    s50   8.073
+s51   9.919,    s52  15.250,    s53  11.515,    s54   3.041,    s55  11.117
+s56  11.369,    s57  12.845,    s58   4.288,    s59   7.108,    s60   6.848
+s61  10.175,    s62   7.630,    s63   4.434,    s64  12.834,    s65   9.938
+s66  11.093,    s67  13.433,    s68  12.845,    s69   2.024,    s70  15.389
+s71  13.274,    s72   4.235,    s73  11.655,    s74  12.483,    s75   4.868
+s76   7.625,    s77  11.870,    s78  13.622,    s79   8.448,    s80   4.267
+s81   1.904,    s82   1.866,    s83  17.218,    s84  17.620,    s85  17.451
+s86  15.657,    s87   4.008,    s88   2.511,    s89  10.714,    s90   4.700
+s91  17.905,    s92  14.888,    s93   6.691,    s94   3.125,    s95   8.717
+s96   7.400,    s97   3.613,    s98  11.251,    s99   8.962,    s100  8.421
+s101 16.607,    s102  5.185,    s103  5.354,    s104 10.540,    s105 11.986
+s106  7.037,    s107  4.125,    s108 16.845,    s109  5.792,    s110  2.720
+s111  6.755,    s112  2.355,    s113 15.085,    s114  5.465,    s115  8.383
+s116  6.632,    s117  8.952,    s118 13.371,    s119 11.368,    s120  3.838
+s121  4.328,    s122  6.845,    s123 11.025,    s124  6.080,    s125  2.293
+s126 12.888,    s127 12.696,    s128  7.114,    s129 14.087,    s130  4.582
+s131 12.824,    s132 12.670,    s133 15.249,    s134 10.097,    s135  6.313
+s136 10.753,    s137  8.448,    s138  2.897,    s139 14.838,    s140  7.123
+s141  3.080,    s142 11.026,    s143  2.060,    s144 13.795,    s145 16.453
+s146 10.841,    s147  9.407,    s148 13.396,    s149 10.062,    s150 16.159
+s151 14.276,    s152  3.984,    s153  6.012,    s154 12.826,    s155  9.032
+s156 17.438,    s157 17.314,    s158 16.357,    s159  7.039,    s160  9.151
+s161 11.418,    s162 16.022,    s163  4.482,    s164 12.028,    s165 14.277
+s166 10.982,    s167  2.151,    s168 14.919,    s169  6.247,    s170  8.764
+s171  7.181,    s172 11.295,    s173 11.063,    s174 10.558,    s175 11.124
+s176 17.629,    s177  6.940,    s178 14.136,    s179 17.389,    s180 17.169
+s181  5.871,    s182  6.997,    s183  5.201,    s184  4.536,    s185 13.619
+s186  6.104,    s187 14.063,    s188 11.764,    s189  6.443,    s190 13.773
+s191  1.827,    s192 15.824,    s193  1.947,    s194  8.681,    s195  7.546
+s196 13.189,    s197  8.479,    s198 10.662,    s199  7.324,    s200 13.103
+s201 16.916,    s202  9.349,    s203  5.182,    s204 10.026,    s205  7.661
+s206 16.947,    s207  2.809,    s208  9.913,    s209  8.096,    s210  5.039
+s211 10.332,    s212 11.302,    s213  7.337,    s214  5.822,    s215 10.627
+s216 10.624,    s217  2.650,    s218  7.857,    s219 17.577,    s220  7.891
+s221  4.248,    s222  9.398,    s223  8.171,    s224  5.050,    s225 11.926
+s226  1.758,    s227  9.914,    s228  1.736,    s229 10.198,    s230 15.329
+s231  2.875,    s232 14.099,    s233  6.429,    s234  5.693,    s235  8.806
+s236  7.712,    s237 10.721,    s238  2.917,    s239 16.524,    s240  2.494
+s241 15.072,    s242 14.625,    s243 12.450,    s244  8.086,    s245  8.434
+s246 15.811,    s247 17.598,    s248 11.030,    s249  6.818,    s250  9.117
+
+
+----    193 PARAMETER CDFSampleS  Sampled cumulative distribution value for calc
+                                  ulating inflow in time t
+
+              m1          m2          m3          m4          m5          m6
+
+s1         0.371       0.420       0.085       0.815       0.509       0.734
+s2         0.824       0.415       0.924       0.394       0.444       0.695
+s3         0.677       0.572       0.174       0.604       0.586       0.728
+s4         0.246       0.142       0.891       0.443       0.114       0.904
+s5         0.334       0.996       0.464       0.530       0.190       0.199
+s6         0.645       0.799       0.586       0.972       0.491       0.373
+s7         0.827       0.821       0.031       0.925       0.003       0.618
+s8         0.007       0.406       0.656       0.616       0.263       0.070
+s9         0.046       0.160       0.452       0.169       0.572       0.859
+s10        0.036       0.355       0.338       0.486       0.259       0.891
+s11        0.849       0.635       0.986       0.758       0.508       0.768
+s12        0.832       0.584       0.575       0.557       0.604       0.977
+s13        0.554       0.935       0.413       0.806 7.778940E-4       0.455
+s14        0.419       0.016       0.082       0.599       0.555       0.618
+s15        0.885       0.190       0.428       0.167       0.886       0.677
+s16        0.863       0.093       0.996       0.617 7.703550E-4       0.609
+s17        0.174       0.311       0.729       0.085       0.442       0.659
+s18        0.484       0.318       0.914       0.184       0.872       0.456
+s19        0.459       0.124       0.104       0.235       0.340       0.873
+s20        0.845       0.823       0.481       0.914       0.929       0.108
+s21        0.351       0.860       0.341       0.213       0.926       0.361
+s22        0.876       0.148       0.456       0.268       0.297       0.115
+s23        0.400       0.912       0.252       0.103       0.146       0.386
+s24        0.046       0.026       0.154       0.073       0.829       0.400
+s25        0.417       0.972       0.243       0.362       0.630       0.243
+s26        0.101       0.406       0.479       0.145       0.510       0.885
+s27        0.055       0.507       0.764       0.979       0.720       0.872
+s28        0.300       0.754       0.844       0.468       0.655       0.378
+s29        0.359       0.254       0.255       0.451       0.945       0.336
+s30        0.048       0.806       0.733       0.920       0.332       0.210
+s31        0.047       0.883       0.093       0.837       0.464 1.652590E-4
+s32        0.157       0.705       0.280       0.636       0.580       0.962
+s33        0.514       0.590       0.567       0.030       0.969       0.594
+s34        0.060       0.544       0.127       0.420       0.881       0.717
+s35        0.314       0.993       0.055       0.619       0.804       0.297
+s36        0.959       0.695       0.631       0.616       0.523       0.141
+s37        0.837       0.892       0.696       0.312       0.356       0.761
+s38        0.136       0.717       0.964       0.442       0.264       0.444
+s39        0.397       0.367       0.621       0.860       0.755       0.901
+s40        0.438       0.069       0.939       0.844       0.950       0.579
+s41        0.035       0.407       0.057       0.532       0.112       0.894
+s42        0.242       0.642       0.291       0.814       0.186       0.501
+s43        0.939       0.682       0.185       0.873       0.165       0.431
+s44        0.772       0.978       0.944       0.249       0.886       0.884
+s45        0.965       0.749       0.648       0.748       0.523       0.686
+s46        0.691       0.866       0.796       0.218       0.590       0.923
+s47        0.603       0.036       0.911       0.565       0.325       0.390
+s48        0.299       0.219       0.822       0.153       0.951       0.032
+s49        0.734       0.110       0.488       0.361       0.216       0.924
+s50        0.450       0.971       0.096       0.479       0.722       0.433
+s51        0.158       0.101       0.806       0.399       0.117       0.874
+s52        0.145       0.178       0.545       0.469       0.909       0.723
+s53        0.166       0.328       0.581       0.578       0.628       0.027
+s54        0.129       0.064       0.311       0.579       0.810       0.679
+s55        0.736       0.339       0.224       0.900       0.829       0.316
+s56        0.952       0.257       0.626       0.971       0.962       0.425
+s57        0.105       0.077       0.644       0.312       0.595       0.606
+s58        0.634       0.958       0.082       0.125       0.605       0.741
+s59        0.848       0.352       0.641       0.896       0.388       0.273
+s60        0.970       0.346       0.410       0.940       0.603       0.900
+s61        0.285       0.222       0.575       0.509       0.557       0.344
+s62        0.398       0.776       0.028       0.362       0.756       0.475
+s63        0.076       0.098       0.330       0.201       0.091       0.449
+s64        0.463       0.812       0.450       0.954       0.123       0.407
+s65        0.886       0.703       0.875       0.555       0.256       0.259
+s66        0.355       0.137       0.807       0.326       0.429       0.009
+s67        0.224       0.661       0.287       0.131       0.407       0.162
+s68        0.862       0.378       0.889       0.270       0.777       0.423
+s69        0.430       0.249       0.382       0.071       0.716       0.703
+s70        0.070       0.969       0.270       0.318       0.883       0.586
+s71        0.382       0.973       0.671       0.951       0.718       0.444
+s72        0.880       0.470       0.464       0.371       0.118       0.965
+s73        0.844       0.721       0.964       0.365       0.768       0.332
+s74        0.542       0.138       0.314       0.080       0.934       0.494
+s75        0.679       0.692       0.055       0.240       0.883       0.101
+s76        0.678       0.101       0.043       0.753       0.987       0.015
+s77        0.147       0.991       0.132       0.085       0.186       0.790
+s78        0.865       0.748       0.389       0.795       0.621       0.761
+s79        0.580       0.664       0.082       0.567       0.443       0.328
+s80        0.331       0.123       0.618       0.534       0.144       0.392
+s81        0.015       0.871       0.246       0.803       0.084       0.987
+s82        0.558       0.682       0.860       0.587       0.040       0.913
+s83        0.542       0.221       0.926       0.793       0.739       0.678
+s84        0.501       0.431       0.570       0.111       0.987       0.519
+s85        0.706       0.842       0.657       0.117       0.274       0.083
+s86        0.505       0.233       0.799       0.988       0.325       0.855
+s87        0.790       0.321       0.213       0.521       0.341       0.256
+s88        0.993       0.248       0.121       0.944       0.253       0.363
+s89        0.394       0.836       0.444       0.926       0.479       0.904
+s90        0.510       0.914       0.192       0.144       0.760       0.331
+s91  1.856650E-4       0.543       0.535       0.869       0.455       0.358
+s92        0.114       0.670       0.938       0.015       0.342       0.865
+s93        0.461       0.421       0.726       0.670       0.093       0.527
+s94        0.895       0.990       0.507       0.645       0.760       0.906
+s95        0.166       0.515       0.025       0.448       0.501       0.681
+s96        0.799       0.873       0.283       0.910       0.451       0.874
+s97        0.217       0.080       0.705       0.900       0.018       0.460
+s98        0.624       0.716       0.335       0.013       0.356       0.368
+s99        0.917       0.990       0.208       0.350       0.487       0.644
+s100       0.056       0.917       0.038       0.302       0.070       0.466
+s101       0.561       0.465       0.547       0.178       0.382       0.513
+s102       0.957       0.602       0.455       0.690       0.707       0.090
+s103       0.408       0.137       0.735       0.593       0.357       0.074
+s104       0.631       0.776       0.420       0.807       0.605       0.659
+s105       0.798       0.649       0.122       0.760       0.633       0.829
+s106       0.909       0.859       0.966       0.036       0.962       0.003
+s107       0.118       0.759       0.256       0.914       0.287       0.687
+s108       0.275       0.390       0.095       0.218       0.844       0.842
+s109       0.884       0.150       0.751       0.523       0.277       0.622
+s110       0.965       0.573       0.336       0.400       0.520       0.219
+s111       0.701       0.354       0.304       0.954       0.202       0.923
+s112       0.469       0.803       0.335       0.081       0.133       0.761
+s113       0.094       0.445       0.794       0.463       0.324       0.354
+s114       0.174       0.988       0.129       0.147       0.658       0.163
+s115       0.812       0.603       0.298       0.501       0.488       0.785
+s116       0.621       0.606       0.802       0.653       0.459       0.597
+s117       0.980       0.185       0.982       0.958       0.483       0.251
+s118       0.485       0.810       0.519       0.975       0.102       0.470
+s119       0.017       0.306       0.301       0.280       0.433       0.503
+s120       0.201       0.553       0.883       0.580       0.788       0.113
+s121       0.658       0.066       0.898       0.887       0.733       0.628
+s122       0.365       0.037       0.729       0.614       0.840       0.923
+s123       0.237       0.450       0.272       0.055       0.967       0.018
+s124       0.018       0.148       0.471       0.725       0.165       0.089
+s125       0.264       0.402       0.904       0.448       0.349       0.506
+s126       0.395       0.057       0.717       0.180       0.623       0.402
+s127       0.117       0.724       0.716       0.074       0.181       0.640
+s128       0.145       0.663       0.132       0.707       0.571       0.033
+s129       0.285       0.406       0.831       0.094       0.156       0.903
+s130       0.458       0.897       0.865       0.546       0.322       0.963
+s131       0.911       0.083       0.639       0.078       0.333       0.103
+s132       0.254       0.747       0.091       0.594       0.710       0.400
+s133       0.217       0.795       0.722       0.789       0.424       0.885
+s134       0.655       0.762       0.201       0.352       0.565       0.769
+s135       0.717       0.282       0.399       0.650       0.282       0.736
+s136       0.669       0.489       0.359       0.679       0.345       0.567
+s137       0.800       0.222       0.427       0.682       0.154       0.128
+s138       0.868       0.765       0.579       0.789       0.897       0.439
+s139       0.589       0.836       0.421       0.070       0.025       0.851
+s140       0.350       0.096       0.259       0.137       0.293       0.597
+s141       0.688       0.549       0.168       0.815       0.554       0.443
+s142       0.166       0.520       0.827       0.042       0.198       0.717
+s143       0.314       0.622       0.476       0.795       0.521       0.471
+s144       0.614       0.814       0.824       0.502       0.785       0.735
+s145       0.415       0.706       0.579       0.276       0.040       0.267
+s146       0.234       0.697       0.968       0.680       0.591       0.503
+s147       0.659       0.339       0.254       0.172       0.257       0.476
+s148       0.876       0.402       0.082       0.709       0.853       0.293
+s149       0.277       0.175       0.871       0.270       0.056       0.578
+s150       0.887       0.124       0.193       0.686       0.797       0.651
+s151       0.469       0.529       0.511       0.407       0.531       0.421
+s152       0.563       0.187       0.754       0.711       0.216       0.732
+s153       0.574       0.175       0.225       0.989       0.081       0.715
+s154       0.710       0.564       0.356       0.482       0.018       0.903
+s155       0.974       0.637       0.009       0.420       0.511       0.776
+s156       0.698       0.586       0.560       0.628       0.992       0.552
+s157       0.033       0.816       0.874       0.667       0.252       0.809
+s158       0.818       0.179       0.876       0.049       0.363       0.684
+s159       0.716       0.470       0.837       0.011       0.075       0.050
+s160       0.805       0.073       0.779       0.626       0.180       0.706
+s161       0.442       0.060       0.528       0.415       0.457       0.045
+s162       0.475       0.098       0.299       0.823       0.907       0.372
+s163       0.862       0.417       0.287       0.181       0.611       0.747
+s164       0.847       0.396       0.750       0.885       0.227       0.825
+s165       0.979       0.056       0.193       0.062       0.049       0.028
+s166       0.596       0.521       0.454       0.932       0.812       0.423
+s167       0.756       0.894       0.114       0.393       0.100       0.123
+s168       0.565       0.663       0.870       0.730       0.706       0.512
+s169       0.665       0.643       0.393       0.498       0.579       0.964
+s170       0.955       0.513       0.362       0.942       0.855       0.829
+s171       0.052       0.923       0.065       0.483       0.948       0.240
+s172       0.120       0.053       0.600       0.108       0.305       0.563
+s173       0.384       0.162       0.680       0.280       0.047       0.216
+s174       0.750       0.929       0.010       0.817       0.975       0.788
+s175       0.573       0.879       0.272       0.148       0.183       0.019
+s176       0.643       0.732       0.567       0.570       0.365       0.084
+s177       0.694       0.868       0.366       0.165       0.736       0.795
+s178       0.050       0.404       0.045       0.376       0.088       0.261
+s179       0.455       0.717       0.249       0.306       0.749       0.793
+s180       0.780       0.024       0.327       0.544       0.029       0.016
+s181       0.429       0.697       0.297       0.705       0.994       0.912
+s182       0.462       0.262       0.597       0.017       0.411       0.318
+s183       0.509       0.238       0.264       0.694       0.093       0.133
+s184       0.109       0.833       0.349       0.883       0.851       0.250
+s185       0.201       0.651       0.281       0.119       0.298       0.483
+s186       0.251       0.284       0.814       0.801       0.026       0.312
+s187       0.248       0.672       0.836       0.316       0.724       0.841
+s188       0.679       0.740       0.529       0.389       0.296       0.932
+s189       0.818       0.992       0.451       0.449       0.272       0.881
+s190       0.833       0.410       0.054       0.564       0.138       0.424
+s191       0.547       0.378       0.568       0.729       0.651       0.246
+s192       0.582       0.715       0.188       0.860       0.292       0.219
+s193       0.511       0.699       0.560       0.336       0.519       0.249
+s194       0.411       0.516       0.769       0.664       0.019       0.909
+s195       0.453       0.668       0.076       0.411       0.518       0.007
+s196       0.187       0.184       0.544       0.553       0.402       0.874
+s197       0.622       0.410       0.273       0.013       0.364       0.602
+s198       0.839       0.685       0.882       0.617       0.099       0.389
+s199       0.030       0.583       0.209       0.403       0.283       0.020
+s200       0.126       0.064       0.128       0.283       0.915       0.850
+s201       0.220       0.269       0.467       0.516       0.024       0.394
+s202       0.676       0.102       0.372       0.571       0.296       0.626
+s203       0.939       0.790       0.343       0.586       0.607       0.256
+s204       0.038       0.673       0.496       0.383       0.778       0.899
+s205       0.007       0.969       0.573       0.083       0.345       0.898
+s206       0.543       0.409       0.328       0.990       0.040       0.893
+s207       0.310       0.621       0.173       0.183       0.057       0.763
+s208       0.870       0.781       0.172       0.692       0.634       0.619
+s209 3.785580E-4       0.217       0.611       0.460       0.208       0.503
+s210       0.332       0.213       0.083       0.283       0.973       0.471
+s211       0.222       0.565       0.900       0.157       0.291       0.145
+s212       0.859       0.024       0.845       0.272       0.774       0.120
+s213       0.789       0.794       0.831       0.114       0.034       0.729
+s214       0.887       0.262       0.791       0.635       0.119       0.521
+s215       0.172       0.110       0.203       0.214       0.279       0.151
+s216       0.767       0.916       0.945       0.071       0.812       0.487
+s217       0.467       0.245       0.841       0.382       0.349       0.048
+s218       0.012       0.744       0.179       0.938       0.965       0.824
+s219       0.726       0.432       0.206       0.113       0.710       0.889
+s220       0.126       0.046 2.323490E-4       0.641       0.265       0.087
+s221       0.765       0.697       0.330       0.466       0.101       0.119
+s222       0.925       0.467       0.408       0.014       0.577       0.957
+s223       0.455       0.995       0.306       0.405       0.529       0.268
+s224       0.731       0.176       0.565       0.259       0.892       0.204
+s225       0.380       0.162       0.694       0.380       0.171       0.655
+s226       0.195       0.322       0.385       0.818       0.537       0.077
+s227       0.274       0.892       0.956       0.385       0.106       0.851
+s228       0.790       0.997       0.545       0.944       0.323       0.075
+s229       0.771       0.605       0.413       0.986       0.021       0.290
+s230       0.429       0.888       0.410       0.682       0.086       0.571
+s231       0.730       0.817       0.910       0.720       0.526       0.506
+s232       0.980       0.300       0.027       0.817       0.429       0.436
+s233       0.994       0.898       0.634       0.014       0.620       0.975
+s234       0.658       0.878       0.288       0.647       0.379       0.530
+s235       0.390       0.108       0.557       0.688       0.488       0.071
+s236       0.977       0.155       0.967       0.489       0.977       0.093
+s237       0.274       0.833       0.542       0.551       0.638       0.917
+s238       0.546       0.503       0.874       0.021       0.495       0.221
+s239       0.804       0.882       0.518       0.098       0.448       0.693
+s240       0.061       0.631       0.138       0.240       0.442       0.720
+s241       0.521       0.574       0.874       0.877       0.237       0.172
+s242       0.869       0.226       0.045       0.391       0.491       0.799
+s243       0.486       0.548       0.369       0.312       0.235       0.394
+s244       0.510       0.099       0.679       0.669       0.278       0.806
+s245       0.985       0.406       0.426       0.151       0.580       0.257
+s246       0.567       0.768       0.853       0.242       0.523       0.821
+s247       0.489       0.110       0.508       0.976       0.998       0.650
+s248       0.006       0.635       0.575       0.431       0.717       0.234
+s249       0.794       0.773       0.336       0.341       0.089       0.262
+s250       0.362       0.228       0.229       0.079       0.864       0.898
+
+
+----    193 PARAMETER FlowStateS  Sampled flow state in time t (integer correspo
+                                  nding to element in fs)
+
+              m1          m2          m3          m4          m5          m6
+
+s1         2.000       2.000       1.000       3.000       3.000       3.000
+s2         4.000       2.000       4.000       2.000       2.000       3.000
+s3         3.000       3.000       2.000       3.000       3.000       3.000
+s4         2.000       1.000       3.000       2.000       1.000       4.000
+s5         2.000       4.000       2.000       3.000       2.000       1.000
+s6         3.000       3.000       3.000       4.000       2.000       2.000
+s7         4.000       3.000       1.000       4.000       1.000       2.000
+s8         1.000       2.000       3.000       3.000       2.000       1.000
+s9         1.000       1.000       2.000       1.000       2.000       4.000
+s10        1.000       2.000       2.000       2.000       2.000       4.000
+s11        4.000       3.000       4.000       3.000       3.000       3.000
+s12        4.000       3.000       3.000       3.000       3.000       4.000
+s13        3.000       4.000       2.000       4.000       1.000       2.000
+s14        3.000       1.000       1.000       2.000       3.000       3.000
+s15        4.000       1.000       2.000       1.000       3.000       3.000
+s16        4.000       1.000       4.000       3.000       1.000       2.000
+s17        2.000       2.000       3.000       1.000       2.000       3.000
+s18        3.000       2.000       4.000       1.000       3.000       2.000
+s19        3.000       2.000       1.000       2.000       2.000       4.000
+s20        4.000       3.000       2.000       4.000       4.000       1.000
+s21        2.000       4.000       2.000       2.000       4.000       2.000
+s22        4.000       1.000       2.000       2.000       2.000       1.000
+s23        2.000       4.000       2.000       1.000       1.000       2.000
+s24        1.000       1.000       1.000       1.000       3.000       2.000
+s25        3.000       4.000       2.000       2.000       3.000       2.000
+s26        2.000       2.000       2.000       1.000       2.000       4.000
+s27        1.000       2.000       3.000       4.000       3.000       3.000
+s28        2.000       3.000       3.000       2.000       3.000       2.000
+s29        2.000       2.000       2.000       2.000       4.000       2.000
+s30        1.000       3.000       3.000       4.000       2.000       2.000
+s31        1.000       3.000       1.000       3.000       2.000       1.000
+s32        2.000       3.000       2.000       3.000       3.000       4.000
+s33        3.000       3.000       3.000       1.000       4.000       3.000
+s34        1.000       2.000       1.000       2.000       4.000       3.000
+s35        2.000       4.000       1.000       2.000       4.000       2.000
+s36        4.000       3.000       3.000       3.000       3.000       2.000
+s37        4.000       3.000       3.000       2.000       2.000       3.000
+s38        2.000       3.000       4.000       2.000       2.000       2.000
+s39        2.000       2.000       3.000       3.000       3.000       4.000
+s40        3.000       1.000       4.000       3.000       4.000       3.000
+s41        1.000       2.000       1.000       2.000       1.000       3.000
+s42        2.000       3.000       2.000       4.000       1.000       2.000
+s43        4.000       3.000       2.000       4.000       1.000       2.000
+s44        3.000       4.000       4.000       2.000       4.000       3.000
+s45        4.000       3.000       3.000       3.000       3.000       3.000
+s46        3.000       3.000       3.000       2.000       3.000       4.000
+s47        3.000       1.000       4.000       3.000       2.000       2.000
+s48        2.000       2.000       4.000       1.000       4.000       1.000
+s49        3.000       2.000       2.000       2.000       2.000       4.000
+s50        3.000       4.000       1.000       2.000       3.000       2.000
+s51        2.000       1.000       3.000       2.000       1.000       3.000
+s52        2.000       1.000       2.000       2.000       4.000       3.000
+s53        2.000       2.000       3.000       3.000       3.000       1.000
+s54        2.000       1.000       2.000       3.000       3.000       3.000
+s55        3.000       2.000       2.000       4.000       3.000       2.000
+s56        4.000       2.000       3.000       4.000       4.000       2.000
+s57        2.000       1.000       2.000       2.000       3.000       3.000
+s58        3.000       4.000       1.000       1.000       2.000       3.000
+s59        4.000       2.000       3.000       3.000       2.000       2.000
+s60        4.000       2.000       2.000       4.000       3.000       3.000
+s61        2.000       2.000       3.000       3.000       3.000       2.000
+s62        2.000       3.000       1.000       2.000       3.000       2.000
+s63        1.000       1.000       2.000       2.000       1.000       2.000
+s64        3.000       3.000       2.000       4.000       1.000       2.000
+s65        4.000       3.000       3.000       3.000       2.000       2.000
+s66        2.000       1.000       3.000       2.000       2.000       1.000
+s67        2.000       3.000       2.000       1.000       2.000       1.000
+s68        4.000       2.000       4.000       2.000       3.000       2.000
+s69        3.000       2.000       2.000       1.000       3.000       3.000
+s70        1.000       4.000       2.000       2.000       4.000       3.000
+s71        2.000       4.000       3.000       4.000       3.000       2.000
+s72        4.000       2.000       2.000       2.000       1.000       4.000
+s73        4.000       3.000       4.000       2.000       3.000       2.000
+s74        3.000       2.000       2.000       1.000       4.000       2.000
+s75        3.000       3.000       1.000       2.000       4.000       1.000
+s76        3.000       2.000       1.000       3.000       4.000       1.000
+s77        2.000       4.000       1.000       1.000       1.000       3.000
+s78        4.000       3.000       2.000       3.000       3.000       3.000
+s79        3.000       3.000       1.000       2.000       2.000       2.000
+s80        2.000       1.000       2.000       3.000       2.000       2.000
+s81        1.000       3.000       2.000       4.000       1.000       4.000
+s82        3.000       3.000       3.000       3.000       1.000       4.000
+s83        3.000       2.000       4.000       3.000       3.000       3.000
+s84        3.000       2.000       3.000       2.000       4.000       3.000
+s85        3.000       3.000       3.000       2.000       2.000       1.000
+s86        3.000       2.000       3.000       4.000       2.000       4.000
+s87        3.000       2.000       2.000       3.000       2.000       2.000
+s88        4.000       2.000       1.000       4.000       2.000       2.000
+s89        2.000       4.000       2.000       4.000       2.000       4.000
+s90        3.000       4.000       1.000       1.000       3.000       2.000
+s91        1.000       2.000       3.000       3.000       2.000       2.000
+s92        2.000       3.000       4.000       1.000       2.000       4.000
+s93        3.000       2.000       3.000       3.000       1.000       2.000
+s94        4.000       4.000       3.000       3.000       3.000       4.000
+s95        2.000       3.000       1.000       2.000       3.000       3.000
+s96        3.000       3.000       2.000       4.000       2.000       4.000
+s97        2.000       1.000       3.000       4.000       1.000       2.000
+s98        3.000       3.000       2.000       1.000       2.000       2.000
+s99        4.000       4.000       2.000       2.000       2.000       3.000
+s100       1.000       4.000       1.000       2.000       1.000       2.000
+s101       3.000       2.000       3.000       2.000       2.000       3.000
+s102       4.000       3.000       2.000       3.000       3.000       1.000
+s103       3.000       2.000       3.000       3.000       2.000       1.000
+s104       3.000       3.000       2.000       4.000       3.000       3.000
+s105       3.000       3.000       2.000       3.000       3.000       3.000
+s106       4.000       3.000       4.000       1.000       4.000       1.000
+s107       2.000       3.000       2.000       4.000       2.000       3.000
+s108       2.000       2.000       1.000       2.000       4.000       3.000
+s109       4.000       1.000       3.000       3.000       2.000       3.000
+s110       4.000       3.000       2.000       2.000       3.000       2.000
+s111       3.000       2.000       2.000       4.000       2.000       4.000
+s112       3.000       3.000       2.000       1.000       1.000       3.000
+s113       1.000       2.000       3.000       2.000       2.000       2.000
+s114       2.000       4.000       1.000       1.000       2.000       1.000
+s115       4.000       3.000       2.000       3.000       2.000       3.000
+s116       3.000       3.000       3.000       3.000       2.000       3.000
+s117       4.000       1.000       4.000       4.000       2.000       2.000
+s118       3.000       3.000       3.000       4.000       1.000       2.000
+s119       1.000       2.000       2.000       2.000       2.000       3.000
+s120       2.000       3.000       3.000       3.000       3.000       2.000
+s121       3.000       1.000       3.000       3.000       3.000       3.000
+s122       2.000       1.000       3.000       3.000       3.000       4.000
+s123       2.000       2.000       2.000       1.000       4.000       1.000
+s124       1.000       1.000       2.000       3.000       2.000       1.000
+s125       2.000       2.000       4.000       2.000       2.000       3.000
+s126       2.000       1.000       3.000       2.000       3.000       2.000
+s127       2.000       3.000       3.000       1.000       1.000       2.000
+s128       2.000       3.000       2.000       3.000       3.000       1.000
+s129       2.000       2.000       4.000       1.000       1.000       4.000
+s130       3.000       3.000       3.000       3.000       2.000       4.000
+s131       4.000       1.000       2.000       1.000       2.000       1.000
+s132       2.000       3.000       1.000       2.000       3.000       2.000
+s133       2.000       3.000       3.000       3.000       2.000       4.000
+s134       3.000       3.000       2.000       2.000       3.000       3.000
+s135       3.000       2.000       2.000       3.000       2.000       3.000
+s136       3.000       2.000       2.000       3.000       2.000       3.000
+s137       4.000       2.000       2.000       3.000       2.000       1.000
+s138       4.000       3.000       3.000       3.000       3.000       2.000
+s139       3.000       3.000       2.000       1.000       1.000       3.000
+s140       2.000       1.000       2.000       1.000       2.000       3.000
+s141       3.000       3.000       2.000       4.000       3.000       2.000
+s142       2.000       3.000       3.000       1.000       1.000       3.000
+s143       2.000       3.000       2.000       3.000       3.000       2.000
+s144       3.000       3.000       3.000       3.000       3.000       3.000
+s145       3.000       3.000       3.000       2.000       1.000       2.000
+s146       2.000       3.000       4.000       3.000       3.000       3.000
+s147       3.000       2.000       2.000       1.000       2.000       2.000
+s148       4.000       2.000       1.000       3.000       3.000       2.000
+s149       2.000       1.000       3.000       2.000       1.000       2.000
+s150       4.000       1.000       1.000       2.000       3.000       3.000
+s151       3.000       3.000       3.000       2.000       3.000       2.000
+s152       3.000       2.000       3.000       3.000       2.000       3.000
+s153       3.000       2.000       2.000       4.000       1.000       3.000
+s154       3.000       3.000       2.000       2.000       1.000       4.000
+s155       4.000       3.000       1.000       2.000       3.000       3.000
+s156       3.000       3.000       3.000       3.000       4.000       3.000
+s157       1.000       3.000       3.000       3.000       2.000       4.000
+s158       4.000       1.000       3.000       1.000       2.000       3.000
+s159       3.000       2.000       4.000       1.000       1.000       1.000
+s160       4.000       1.000       3.000       3.000       2.000       3.000
+s161       3.000       1.000       2.000       2.000       2.000       1.000
+s162       3.000       1.000       2.000       4.000       4.000       2.000
+s163       4.000       2.000       2.000       1.000       2.000       3.000
+s164       4.000       2.000       3.000       3.000       2.000       4.000
+s165       4.000       1.000       1.000       1.000       1.000       1.000
+s166       3.000       3.000       2.000       4.000       3.000       2.000
+s167       3.000       3.000       2.000       2.000       1.000       1.000
+s168       3.000       3.000       3.000       3.000       3.000       3.000
+s169       3.000       3.000       2.000       2.000       3.000       4.000
+s170       4.000       3.000       2.000       4.000       3.000       3.000
+s171       1.000       4.000       1.000       2.000       4.000       2.000
+s172       2.000       1.000       2.000       1.000       2.000       3.000
+s173       2.000       1.000       2.000       2.000       1.000       2.000
+s174       3.000       4.000       1.000       3.000       4.000       3.000
+s175       3.000       3.000       2.000       1.000       1.000       1.000
+s176       3.000       3.000       3.000       3.000       2.000       1.000
+s177       3.000       3.000       2.000       1.000       3.000       3.000
+s178       1.000       2.000       1.000       2.000       1.000       2.000
+s179       3.000       3.000       2.000       2.000       3.000       3.000
+s180       3.000       1.000       2.000       3.000       1.000       1.000
+s181       3.000       3.000       2.000       3.000       4.000       4.000
+s182       3.000       2.000       3.000       1.000       2.000       2.000
+s183       3.000       2.000       2.000       3.000       1.000       1.000
+s184       2.000       4.000       2.000       4.000       3.000       2.000
+s185       2.000       3.000       2.000       1.000       2.000       2.000
+s186       2.000       2.000       4.000       3.000       1.000       2.000
+s187       2.000       3.000       3.000       2.000       3.000       3.000
+s188       3.000       3.000       3.000       2.000       2.000       4.000
+s189       4.000       4.000       2.000       2.000       2.000       4.000
+s190       4.000       2.000       1.000       2.000       1.000       2.000
+s191       3.000       2.000       3.000       3.000       3.000       2.000
+s192       3.000       3.000       2.000       4.000       2.000       2.000
+s193       3.000       3.000       3.000       2.000       3.000       2.000
+s194       3.000       3.000       3.000       3.000       1.000       4.000
+s195       3.000       3.000       1.000       2.000       3.000       1.000
+s196       2.000       1.000       2.000       3.000       2.000       4.000
+s197       3.000       2.000       2.000       1.000       2.000       3.000
+s198       4.000       3.000       3.000       3.000       1.000       2.000
+s199       1.000       2.000       2.000       2.000       2.000       1.000
+s200       2.000       1.000       1.000       2.000       4.000       3.000
+s201       2.000       2.000       2.000       3.000       1.000       2.000
+s202       3.000       2.000       2.000       3.000       2.000       3.000
+s203       4.000       3.000       2.000       3.000       3.000       2.000
+s204       1.000       2.000       2.000       2.000       3.000       3.000
+s205       1.000       4.000       3.000       1.000       2.000       4.000
+s206       3.000       2.000       2.000       4.000       1.000       3.000
+s207       2.000       3.000       2.000       1.000       1.000       3.000
+s208       4.000       3.000       2.000       3.000       3.000       3.000
+s209       1.000       2.000       3.000       2.000       2.000       3.000
+s210       2.000       2.000       1.000       2.000       4.000       2.000
+s211       2.000       3.000       3.000       2.000       2.000       1.000
+s212       4.000       1.000       3.000       2.000       3.000       2.000
+s213       3.000       3.000       3.000       2.000       1.000       3.000
+s214       4.000       2.000       3.000       3.000       2.000       3.000
+s215       2.000       1.000       2.000       2.000       2.000       1.000
+s216       3.000       4.000       4.000       1.000       3.000       2.000
+s217       3.000       2.000       4.000       2.000       2.000       1.000
+s218       1.000       3.000       2.000       4.000       4.000       3.000
+s219       3.000       2.000       2.000       1.000       3.000       3.000
+s220       2.000       1.000       1.000       2.000       2.000       1.000
+s221       3.000       3.000       2.000       2.000       1.000       1.000
+s222       4.000       2.000       2.000       1.000       2.000       4.000
+s223       3.000       4.000       2.000       2.000       3.000       2.000
+s224       3.000       2.000       3.000       2.000       4.000       2.000
+s225       2.000       1.000       2.000       2.000       1.000       2.000
+s226       2.000       2.000       2.000       4.000       3.000       1.000
+s227       2.000       4.000       4.000       2.000       1.000       3.000
+s228       3.000       4.000       3.000       4.000       2.000       1.000
+s229       3.000       3.000       2.000       4.000       1.000       2.000
+s230       3.000       3.000       2.000       3.000       1.000       2.000
+s231       3.000       3.000       4.000       3.000       3.000       3.000
+s232       4.000       2.000       1.000       3.000       2.000       2.000
+s233       4.000       3.000       3.000       1.000       2.000       4.000
+s234       3.000       3.000       2.000       3.000       2.000       3.000
+s235       2.000       1.000       2.000       3.000       2.000       1.000
+s236       4.000       1.000       4.000       2.000       4.000       1.000
+s237       2.000       4.000       3.000       3.000       3.000       4.000
+s238       3.000       3.000       3.000       1.000       2.000       2.000
+s239       4.000       3.000       3.000       1.000       2.000       3.000
+s240       1.000       2.000       1.000       2.000       2.000       3.000
+s241       3.000       3.000       3.000       3.000       2.000       1.000
+s242       4.000       2.000       1.000       2.000       2.000       3.000
+s243       3.000       3.000       2.000       2.000       2.000       2.000
+s244       3.000       1.000       2.000       3.000       2.000       4.000
+s245       4.000       2.000       2.000       1.000       2.000       2.000
+s246       3.000       3.000       3.000       2.000       3.000       3.000
+s247       3.000       2.000       3.000       4.000       4.000       3.000
+s248       1.000       2.000       3.000       2.000       3.000       2.000
+s249       3.000       3.000       2.000       2.000       1.000       2.000
+s250       2.000       2.000       2.000       1.000       3.000       3.000
+
+
+----    193 PARAMETER InflowS  Sampled reservoir inflows
+
+              m1          m2          m3          m4          m5          m6
+
+s1         3.000       3.000       1.000       5.000       5.000       5.000
+s2         8.000       3.000       8.000       3.000       3.000       5.000
+s3         5.000       5.000       3.000       5.000       5.000       5.000
+s4         3.000       1.000       5.000       3.000       1.000       8.000
+s5         3.000       8.000       3.000       5.000       3.000       1.000
+s6         5.000       5.000       5.000       8.000       3.000       3.000
+s7         8.000       5.000       1.000       8.000       1.000       3.000
+s8         1.000       3.000       5.000       5.000       3.000       1.000
+s9         1.000       1.000       3.000       1.000       3.000       8.000
+s10        1.000       3.000       3.000       3.000       3.000       8.000
+s11        8.000       5.000       8.000       5.000       5.000       5.000
+s12        8.000       5.000       5.000       5.000       5.000       8.000
+s13        5.000       8.000       3.000       8.000       1.000       3.000
+s14        5.000       1.000       1.000       3.000       5.000       5.000
+s15        8.000       1.000       3.000       1.000       5.000       5.000
+s16        8.000       1.000       8.000       5.000       1.000       3.000
+s17        3.000       3.000       5.000       1.000       3.000       5.000
+s18        5.000       3.000       8.000       1.000       5.000       3.000
+s19        5.000       3.000       1.000       3.000       3.000       8.000
+s20        8.000       5.000       3.000       8.000       8.000       1.000
+s21        3.000       8.000       3.000       3.000       8.000       3.000
+s22        8.000       1.000       3.000       3.000       3.000       1.000
+s23        3.000       8.000       3.000       1.000       1.000       3.000
+s24        1.000       1.000       1.000       1.000       5.000       3.000
+s25        5.000       8.000       3.000       3.000       5.000       3.000
+s26        3.000       3.000       3.000       1.000       3.000       8.000
+s27        1.000       3.000       5.000       8.000       5.000       5.000
+s28        3.000       5.000       5.000       3.000       5.000       3.000
+s29        3.000       3.000       3.000       3.000       8.000       3.000
+s30        1.000       5.000       5.000       8.000       3.000       3.000
+s31        1.000       5.000       1.000       5.000       3.000       1.000
+s32        3.000       5.000       3.000       5.000       5.000       8.000
+s33        5.000       5.000       5.000       1.000       8.000       5.000
+s34        1.000       3.000       1.000       3.000       8.000       5.000
+s35        3.000       8.000       1.000       3.000       8.000       3.000
+s36        8.000       5.000       5.000       5.000       5.000       3.000
+s37        8.000       5.000       5.000       3.000       3.000       5.000
+s38        3.000       5.000       8.000       3.000       3.000       3.000
+s39        3.000       3.000       5.000       5.000       5.000       8.000
+s40        5.000       1.000       8.000       5.000       8.000       5.000
+s41        1.000       3.000       1.000       3.000       1.000       5.000
+s42        3.000       5.000       3.000       8.000       1.000       3.000
+s43        8.000       5.000       3.000       8.000       1.000       3.000
+s44        5.000       8.000       8.000       3.000       8.000       5.000
+s45        8.000       5.000       5.000       5.000       5.000       5.000
+s46        5.000       5.000       5.000       3.000       5.000       8.000
+s47        5.000       1.000       8.000       5.000       3.000       3.000
+s48        3.000       3.000       8.000       1.000       8.000       1.000
+s49        5.000       3.000       3.000       3.000       3.000       8.000
+s50        5.000       8.000       1.000       3.000       5.000       3.000
+s51        3.000       1.000       5.000       3.000       1.000       5.000
+s52        3.000       1.000       3.000       3.000       8.000       5.000
+s53        3.000       3.000       5.000       5.000       5.000       1.000
+s54        3.000       1.000       3.000       5.000       5.000       5.000
+s55        5.000       3.000       3.000       8.000       5.000       3.000
+s56        8.000       3.000       5.000       8.000       8.000       3.000
+s57        3.000       1.000       3.000       3.000       5.000       5.000
+s58        5.000       8.000       1.000       1.000       3.000       5.000
+s59        8.000       3.000       5.000       5.000       3.000       3.000
+s60        8.000       3.000       3.000       8.000       5.000       5.000
+s61        3.000       3.000       5.000       5.000       5.000       3.000
+s62        3.000       5.000       1.000       3.000       5.000       3.000
+s63        1.000       1.000       3.000       3.000       1.000       3.000
+s64        5.000       5.000       3.000       8.000       1.000       3.000
+s65        8.000       5.000       5.000       5.000       3.000       3.000
+s66        3.000       1.000       5.000       3.000       3.000       1.000
+s67        3.000       5.000       3.000       1.000       3.000       1.000
+s68        8.000       3.000       8.000       3.000       5.000       3.000
+s69        5.000       3.000       3.000       1.000       5.000       5.000
+s70        1.000       8.000       3.000       3.000       8.000       5.000
+s71        3.000       8.000       5.000       8.000       5.000       3.000
+s72        8.000       3.000       3.000       3.000       1.000       8.000
+s73        8.000       5.000       8.000       3.000       5.000       3.000
+s74        5.000       3.000       3.000       1.000       8.000       3.000
+s75        5.000       5.000       1.000       3.000       8.000       1.000
+s76        5.000       3.000       1.000       5.000       8.000       1.000
+s77        3.000       8.000       1.000       1.000       1.000       5.000
+s78        8.000       5.000       3.000       5.000       5.000       5.000
+s79        5.000       5.000       1.000       3.000       3.000       3.000
+s80        3.000       1.000       3.000       5.000       3.000       3.000
+s81        1.000       5.000       3.000       8.000       1.000       8.000
+s82        5.000       5.000       5.000       5.000       1.000       8.000
+s83        5.000       3.000       8.000       5.000       5.000       5.000
+s84        5.000       3.000       5.000       3.000       8.000       5.000
+s85        5.000       5.000       5.000       3.000       3.000       1.000
+s86        5.000       3.000       5.000       8.000       3.000       8.000
+s87        5.000       3.000       3.000       5.000       3.000       3.000
+s88        8.000       3.000       1.000       8.000       3.000       3.000
+s89        3.000       8.000       3.000       8.000       3.000       8.000
+s90        5.000       8.000       1.000       1.000       5.000       3.000
+s91        1.000       3.000       5.000       5.000       3.000       3.000
+s92        3.000       5.000       8.000       1.000       3.000       8.000
+s93        5.000       3.000       5.000       5.000       1.000       3.000
+s94        8.000       8.000       5.000       5.000       5.000       8.000
+s95        3.000       5.000       1.000       3.000       5.000       5.000
+s96        5.000       5.000       3.000       8.000       3.000       8.000
+s97        3.000       1.000       5.000       8.000       1.000       3.000
+s98        5.000       5.000       3.000       1.000       3.000       3.000
+s99        8.000       8.000       3.000       3.000       3.000       5.000
+s100       1.000       8.000       1.000       3.000       1.000       3.000
+s101       5.000       3.000       5.000       3.000       3.000       5.000
+s102       8.000       5.000       3.000       5.000       5.000       1.000
+s103       5.000       3.000       5.000       5.000       3.000       1.000
+s104       5.000       5.000       3.000       8.000       5.000       5.000
+s105       5.000       5.000       3.000       5.000       5.000       5.000
+s106       8.000       5.000       8.000       1.000       8.000       1.000
+s107       3.000       5.000       3.000       8.000       3.000       5.000
+s108       3.000       3.000       1.000       3.000       8.000       5.000
+s109       8.000       1.000       5.000       5.000       3.000       5.000
+s110       8.000       5.000       3.000       3.000       5.000       3.000
+s111       5.000       3.000       3.000       8.000       3.000       8.000
+s112       5.000       5.000       3.000       1.000       1.000       5.000
+s113       1.000       3.000       5.000       3.000       3.000       3.000
+s114       3.000       8.000       1.000       1.000       3.000       1.000
+s115       8.000       5.000       3.000       5.000       3.000       5.000
+s116       5.000       5.000       5.000       5.000       3.000       5.000
+s117       8.000       1.000       8.000       8.000       3.000       3.000
+s118       5.000       5.000       5.000       8.000       1.000       3.000
+s119       1.000       3.000       3.000       3.000       3.000       5.000
+s120       3.000       5.000       5.000       5.000       5.000       3.000
+s121       5.000       1.000       5.000       5.000       5.000       5.000
+s122       3.000       1.000       5.000       5.000       5.000       8.000
+s123       3.000       3.000       3.000       1.000       8.000       1.000
+s124       1.000       1.000       3.000       5.000       3.000       1.000
+s125       3.000       3.000       8.000       3.000       3.000       5.000
+s126       3.000       1.000       5.000       3.000       5.000       3.000
+s127       3.000       5.000       5.000       1.000       1.000       3.000
+s128       3.000       5.000       3.000       5.000       5.000       1.000
+s129       3.000       3.000       8.000       1.000       1.000       8.000
+s130       5.000       5.000       5.000       5.000       3.000       8.000
+s131       8.000       1.000       3.000       1.000       3.000       1.000
+s132       3.000       5.000       1.000       3.000       5.000       3.000
+s133       3.000       5.000       5.000       5.000       3.000       8.000
+s134       5.000       5.000       3.000       3.000       5.000       5.000
+s135       5.000       3.000       3.000       5.000       3.000       5.000
+s136       5.000       3.000       3.000       5.000       3.000       5.000
+s137       8.000       3.000       3.000       5.000       3.000       1.000
+s138       8.000       5.000       5.000       5.000       5.000       3.000
+s139       5.000       5.000       3.000       1.000       1.000       5.000
+s140       3.000       1.000       3.000       1.000       3.000       5.000
+s141       5.000       5.000       3.000       8.000       5.000       3.000
+s142       3.000       5.000       5.000       1.000       1.000       5.000
+s143       3.000       5.000       3.000       5.000       5.000       3.000
+s144       5.000       5.000       5.000       5.000       5.000       5.000
+s145       5.000       5.000       5.000       3.000       1.000       3.000
+s146       3.000       5.000       8.000       5.000       5.000       5.000
+s147       5.000       3.000       3.000       1.000       3.000       3.000
+s148       8.000       3.000       1.000       5.000       5.000       3.000
+s149       3.000       1.000       5.000       3.000       1.000       3.000
+s150       8.000       1.000       1.000       3.000       5.000       5.000
+s151       5.000       5.000       5.000       3.000       5.000       3.000
+s152       5.000       3.000       5.000       5.000       3.000       5.000
+s153       5.000       3.000       3.000       8.000       1.000       5.000
+s154       5.000       5.000       3.000       3.000       1.000       8.000
+s155       8.000       5.000       1.000       3.000       5.000       5.000
+s156       5.000       5.000       5.000       5.000       8.000       5.000
+s157       1.000       5.000       5.000       5.000       3.000       8.000
+s158       8.000       1.000       5.000       1.000       3.000       5.000
+s159       5.000       3.000       8.000       1.000       1.000       1.000
+s160       8.000       1.000       5.000       5.000       3.000       5.000
+s161       5.000       1.000       3.000       3.000       3.000       1.000
+s162       5.000       1.000       3.000       8.000       8.000       3.000
+s163       8.000       3.000       3.000       1.000       3.000       5.000
+s164       8.000       3.000       5.000       5.000       3.000       8.000
+s165       8.000       1.000       1.000       1.000       1.000       1.000
+s166       5.000       5.000       3.000       8.000       5.000       3.000
+s167       5.000       5.000       3.000       3.000       1.000       1.000
+s168       5.000       5.000       5.000       5.000       5.000       5.000
+s169       5.000       5.000       3.000       3.000       5.000       8.000
+s170       8.000       5.000       3.000       8.000       5.000       5.000
+s171       1.000       8.000       1.000       3.000       8.000       3.000
+s172       3.000       1.000       3.000       1.000       3.000       5.000
+s173       3.000       1.000       3.000       3.000       1.000       3.000
+s174       5.000       8.000       1.000       5.000       8.000       5.000
+s175       5.000       5.000       3.000       1.000       1.000       1.000
+s176       5.000       5.000       5.000       5.000       3.000       1.000
+s177       5.000       5.000       3.000       1.000       5.000       5.000
+s178       1.000       3.000       1.000       3.000       1.000       3.000
+s179       5.000       5.000       3.000       3.000       5.000       5.000
+s180       5.000       1.000       3.000       5.000       1.000       1.000
+s181       5.000       5.000       3.000       5.000       8.000       8.000
+s182       5.000       3.000       5.000       1.000       3.000       3.000
+s183       5.000       3.000       3.000       5.000       1.000       1.000
+s184       3.000       8.000       3.000       8.000       5.000       3.000
+s185       3.000       5.000       3.000       1.000       3.000       3.000
+s186       3.000       3.000       8.000       5.000       1.000       3.000
+s187       3.000       5.000       5.000       3.000       5.000       5.000
+s188       5.000       5.000       5.000       3.000       3.000       8.000
+s189       8.000       8.000       3.000       3.000       3.000       8.000
+s190       8.000       3.000       1.000       3.000       1.000       3.000
+s191       5.000       3.000       5.000       5.000       5.000       3.000
+s192       5.000       5.000       3.000       8.000       3.000       3.000
+s193       5.000       5.000       5.000       3.000       5.000       3.000
+s194       5.000       5.000       5.000       5.000       1.000       8.000
+s195       5.000       5.000       1.000       3.000       5.000       1.000
+s196       3.000       1.000       3.000       5.000       3.000       8.000
+s197       5.000       3.000       3.000       1.000       3.000       5.000
+s198       8.000       5.000       5.000       5.000       1.000       3.000
+s199       1.000       3.000       3.000       3.000       3.000       1.000
+s200       3.000       1.000       1.000       3.000       8.000       5.000
+s201       3.000       3.000       3.000       5.000       1.000       3.000
+s202       5.000       3.000       3.000       5.000       3.000       5.000
+s203       8.000       5.000       3.000       5.000       5.000       3.000
+s204       1.000       3.000       3.000       3.000       5.000       5.000
+s205       1.000       8.000       5.000       1.000       3.000       8.000
+s206       5.000       3.000       3.000       8.000       1.000       5.000
+s207       3.000       5.000       3.000       1.000       1.000       5.000
+s208       8.000       5.000       3.000       5.000       5.000       5.000
+s209       1.000       3.000       5.000       3.000       3.000       5.000
+s210       3.000       3.000       1.000       3.000       8.000       3.000
+s211       3.000       5.000       5.000       3.000       3.000       1.000
+s212       8.000       1.000       5.000       3.000       5.000       3.000
+s213       5.000       5.000       5.000       3.000       1.000       5.000
+s214       8.000       3.000       5.000       5.000       3.000       5.000
+s215       3.000       1.000       3.000       3.000       3.000       1.000
+s216       5.000       8.000       8.000       1.000       5.000       3.000
+s217       5.000       3.000       8.000       3.000       3.000       1.000
+s218       1.000       5.000       3.000       8.000       8.000       5.000
+s219       5.000       3.000       3.000       1.000       5.000       5.000
+s220       3.000       1.000       1.000       3.000       3.000       1.000
+s221       5.000       5.000       3.000       3.000       1.000       1.000
+s222       8.000       3.000       3.000       1.000       3.000       8.000
+s223       5.000       8.000       3.000       3.000       5.000       3.000
+s224       5.000       3.000       5.000       3.000       8.000       3.000
+s225       3.000       1.000       3.000       3.000       1.000       3.000
+s226       3.000       3.000       3.000       8.000       5.000       1.000
+s227       3.000       8.000       8.000       3.000       1.000       5.000
+s228       5.000       8.000       5.000       8.000       3.000       1.000
+s229       5.000       5.000       3.000       8.000       1.000       3.000
+s230       5.000       5.000       3.000       5.000       1.000       3.000
+s231       5.000       5.000       8.000       5.000       5.000       5.000
+s232       8.000       3.000       1.000       5.000       3.000       3.000
+s233       8.000       5.000       5.000       1.000       3.000       8.000
+s234       5.000       5.000       3.000       5.000       3.000       5.000
+s235       3.000       1.000       3.000       5.000       3.000       1.000
+s236       8.000       1.000       8.000       3.000       8.000       1.000
+s237       3.000       8.000       5.000       5.000       5.000       8.000
+s238       5.000       5.000       5.000       1.000       3.000       3.000
+s239       8.000       5.000       5.000       1.000       3.000       5.000
+s240       1.000       3.000       1.000       3.000       3.000       5.000
+s241       5.000       5.000       5.000       5.000       3.000       1.000
+s242       8.000       3.000       1.000       3.000       3.000       5.000
+s243       5.000       5.000       3.000       3.000       3.000       3.000
+s244       5.000       1.000       3.000       5.000       3.000       8.000
+s245       8.000       3.000       3.000       1.000       3.000       3.000
+s246       5.000       5.000       5.000       3.000       5.000       5.000
+s247       5.000       3.000       5.000       8.000       8.000       5.000
+s248       1.000       3.000       5.000       3.000       5.000       3.000
+s249       5.000       5.000       3.000       3.000       1.000       3.000
+s250       3.000       3.000       3.000       1.000       5.000       5.000
+
+
+----    193 PARAMETER FlowAtAS  Calculated flow requirement at A
+
+s1   1.000,    s2   1.600,    s3   1.000,    s4   1.600,    s5   1.600
+s6   1.600,    s7   1.600,    s8   1.000,    s9   1.600,    s10  1.600
+s11  1.600,    s12  1.600,    s13  1.600,    s14  1.000,    s15  1.600
+s16  1.600,    s17  1.000,    s18  1.600,    s19  1.600,    s20  1.600
+s21  1.600,    s22  1.600,    s23  1.600,    s24  1.000,    s25  1.600
+s26  1.600,    s27  1.600,    s28  1.000,    s29  1.600,    s30  1.600
+s31  1.000,    s32  1.600,    s33  1.600,    s34  1.600,    s35  1.600
+s36  1.600,    s37  1.600,    s38  1.600,    s39  1.600,    s40  1.600
+s41  1.000,    s42  1.600,    s43  1.600,    s44  1.600,    s45  1.600
+s46  1.600,    s47  1.600,    s48  1.600,    s49  1.600,    s50  1.600
+s51  1.000,    s52  1.600,    s53  1.000,    s54  1.000,    s55  1.600
+s56  1.600,    s57  1.000,    s58  1.600,    s59  1.600,    s60  1.600
+s61  1.000,    s62  1.000,    s63  1.000,    s64  1.600,    s65  1.600
+s66  1.000,    s67  1.000,    s68  1.600,    s69  1.000,    s70  1.600
+s71  1.600,    s72  1.600,    s73  1.600,    s74  1.600,    s75  1.600
+s76  1.600,    s77  1.600,    s78  1.600,    s79  1.000,    s80  1.000
+s81  1.600,    s82  1.600,    s83  1.600,    s84  1.600,    s85  1.000
+s86  1.600,    s87  1.000,    s88  1.600,    s89  1.600,    s90  1.600
+s91  1.000,    s92  1.600,    s93  1.000,    s94  1.600,    s95  1.000
+s96  1.600,    s97  1.600,    s98  1.000,    s99  1.600,    s100 1.600
+s101 1.000,    s102 1.600,    s103 1.000,    s104 1.600,    s105 1.000
+s106 1.600,    s107 1.600,    s108 1.600,    s109 1.600,    s110 1.600
+s111 1.600,    s112 1.000,    s113 1.000,    s114 1.600,    s115 1.600
+s116 1.000,    s117 1.600,    s118 1.600,    s119 1.000,    s120 1.000
+s121 1.000,    s122 1.600,    s123 1.600,    s124 1.000,    s125 1.600
+s126 1.000,    s127 1.000,    s128 1.000,    s129 1.600,    s130 1.600
+s131 1.600,    s132 1.000,    s133 1.600,    s134 1.000,    s135 1.000
+s136 1.000,    s137 1.600,    s138 1.600,    s139 1.000,    s140 1.000
+s141 1.600,    s142 1.000,    s143 1.000,    s144 1.000,    s145 1.000
+s146 1.600,    s147 1.000,    s148 1.600,    s149 1.000,    s150 1.600
+s151 1.000,    s152 1.000,    s153 1.600,    s154 1.600,    s155 1.600
+s156 1.600,    s157 1.600,    s158 1.600,    s159 1.600,    s160 1.600
+s161 1.000,    s162 1.600,    s163 1.600,    s164 1.600,    s165 1.600
+s166 1.600,    s167 1.000,    s168 1.000,    s169 1.600,    s170 1.600
+s171 1.600,    s172 1.000,    s173 1.000,    s174 1.600,    s175 1.000
+s176 1.000,    s177 1.000,    s178 1.000,    s179 1.000,    s180 1.000
+s181 1.600,    s182 1.000,    s183 1.000,    s184 1.600,    s185 1.000
+s186 1.600,    s187 1.000,    s188 1.600,    s189 1.600,    s190 1.600
+s191 1.000,    s192 1.600,    s193 1.000,    s194 1.600,    s195 1.000
+s196 1.600,    s197 1.000,    s198 1.600,    s199 1.000,    s200 1.600
+s201 1.000,    s202 1.000,    s203 1.600,    s204 1.000,    s205 1.600
+s206 1.600,    s207 1.000,    s208 1.600,    s209 1.000,    s210 1.600
+s211 1.000,    s212 1.600,    s213 1.000,    s214 1.600,    s215 1.000
+s216 1.600,    s217 1.600,    s218 1.600,    s219 1.000,    s220 1.000
+s221 1.000,    s222 1.600,    s223 1.600,    s224 1.600,    s225 1.000
+s226 1.600,    s227 1.600,    s228 1.600,    s229 1.600,    s230 1.000
+s231 1.600,    s232 1.600,    s233 1.600,    s234 1.000,    s235 1.000
+s236 1.600,    s237 1.600,    s238 1.000,    s239 1.600,    s240 1.000
+s241 1.000,    s242 1.600,    s243 1.000,    s244 1.600,    s245 1.600
+s246 1.000,    s247 1.600,    s248 1.000,    s249 1.000,    s250 1.000
+
+----    228 PARAMETER NetBenS  Net benefits ($)
+
+s1   117.696,    s2   122.054,    s3    83.139,    s4    76.776,    s5   119.113
+s6   132.308,    s7   128.334,    s8    58.409,    s9    71.538,    s10   62.521
+s11    0.982,    s12  120.382,    s13    1.032,    s14   70.971,    s15  118.171
+s16   94.027,    s17   72.844,    s18  100.553,    s19   83.851,    s20  144.963
+s21   80.999,    s22   79.729,    s23   75.894,    s24   65.532,    s25  114.406
+s26  101.428,    s27   96.089,    s28   80.873,    s29  124.460,    s30   84.371
+s31  110.310,    s32  108.454,    s33   84.863,    s34   84.418,    s35   99.457
+s36  109.489,    s37   83.610,    s38  116.032,    s39  131.382,    s40   87.142
+s41   74.153,    s42   83.564,    s43  135.088,    s44   97.464,    s45  131.789
+s46  145.399,    s47  128.765,    s48  126.602,    s49  127.215,    s50   95.693
+s51   89.894,    s52  119.598,    s53  103.238,    s54   74.462,    s55  112.270
+s56  130.780,    s57  108.182,    s58   70.395,    s59   96.232,    s60  102.161
+s61  107.876,    s62   87.319,    s63   45.790,    s64  105.797,    s65  111.913
+s66   87.971,    s67   93.067,    s68  123.197,    s69   70.394,    s70  131.555
+s71  131.533,    s72   82.539,    s73  124.897,    s74    0.368,    s75   78.073
+s76   74.691,    s77   93.018,    s78  131.087,    s79   84.448,    s80   68.069
+s81   72.984,    s82   79.663,    s83  145.472,    s84  142.679,    s85  132.104
+s86  141.429,    s87   78.333,    s88   75.643,    s89  123.746,    s90    0.658
+s91    0.939,    s92  129.553,    s93   89.065,    s94   98.798,    s95   97.169
+s96    0.174,    s97   67.671,    s98   95.645,    s99  110.222,    s100  70.403
+s101 133.922,    s102  88.539,    s103  83.716,    s104 118.472,    s105 124.245
+s106 103.955,    s107  84.301,    s108 125.086,    s109  90.967,    s110   0.395
+s111 101.421,    s112  66.221,    s113 111.340,    s114  58.684,    s115 105.734
+s116   0.510,    s117 111.950,    s118 121.018,    s119  96.474,    s120  87.254
+s121  89.000,    s122  95.179,    s123  91.358,    s124  60.321,    s125  72.400
+s126 108.353,    s127  98.212,    s128  90.755,    s129 115.669,    s130   0.485
+s131  82.204,    s132 106.382,    s133 133.195,    s134 112.289,    s135  92.754
+s136 110.513,    s137  92.392,    s138  84.598,    s139 113.432,    s140  72.093
+s141   0.874,    s142 100.905,    s143  75.738,    s144 134.502,    s145   0.358
+s146 119.965,    s147  88.370,    s148 116.985,    s149  83.848,    s150 119.626
+s151 128.221,    s152  87.836,    s153  87.446,    s154 114.703,    s155 103.927
+s156 150.172,    s157 137.055,    s158 124.030,    s159  70.357,    s160 101.875
+s161  58.682,    s162 134.086,    s163   0.772,    s164 126.911,    s165  80.988
+s166 116.128,    s167  53.891,    s168 140.377,    s169  96.713,    s170 118.139
+s171  89.924,    s172  87.204,    s173  80.163,    s174 119.462,    s175  87.976
+s176 136.548,    s177  95.260,    s178   0.766,    s179 141.456,    s180 112.274
+s181 106.684,    s182  84.786,    s183  71.804,    s184  92.405,    s185  93.978
+s186  80.940,    s187 128.055,    s188 119.256,    s189   0.532,    s190  99.980
+s191  79.206,    s192 131.096,    s193  79.511,    s194 106.924,    s195  85.227
+s196 111.358,    s197  86.574,    s198 106.901,    s199  65.296,    s200 105.632
+s201   0.361,    s202 104.897,    s203  92.927,    s204   0.514,    s205  96.245
+s206 131.188,    s207   0.846,    s208 111.914,    s209  89.185,    s210   0.951
+s211  95.396,    s212 108.608,    s213  95.623,    s214  95.488,    s215   0.334
+s216   0.051,    s217  69.199,    s218 105.827,    s219 132.366,    s220  58.615
+s221  67.990,    s222  97.549,    s223   0.355,    s224  88.000,    s225  83.703
+s226  65.631,    s227 109.628,    s228  71.328,    s229 102.754,    s230 118.632
+s231  90.762,    s232 110.644,    s233 100.118,    s234   0.726,    s235  69.220
+s236   2.339,    s237 122.962,    s238  70.561,    s239 128.024,    s240  53.448
+s241  93.954,    s242 113.298,    s243 112.102,    s244  95.743,    s245  86.958
+s246 139.106,    s247 153.591,    s248 100.919,    s249  73.930,    s250   0.921
+
+
+----    228 PARAMETER ModStat  Model status
+
+s1   1.000,    s2   1.000,    s3   1.000,    s4   1.000,    s5   1.000
+s6   1.000,    s7   1.000,    s8   1.000,    s9   4.000,    s10  1.000
+s11  4.000,    s12  1.000,    s13  4.000,    s14  1.000,    s15  1.000
+s16  1.000,    s17  1.000,    s18  1.000,    s19  1.000,    s20  1.000
+s21  1.000,    s22  1.000,    s23  1.000,    s24  1.000,    s25  1.000
+s26  1.000,    s27  1.000,    s28  1.000,    s29  1.000,    s30  1.000
+s31  1.000,    s32  1.000,    s33  1.000,    s34  1.000,    s35  1.000
+s36  1.000,    s37  1.000,    s38  1.000,    s39  1.000,    s40  1.000
+s41  1.000,    s42  1.000,    s43  1.000,    s44  1.000,    s45  1.000
+s46  1.000,    s47  1.000,    s48  1.000,    s49  1.000,    s50  1.000
+s51  1.000,    s52  1.000,    s53  1.000,    s54  1.000,    s55  1.000
+s56  1.000,    s57  1.000,    s58  1.000,    s59  1.000,    s60  1.000
+s61  1.000,    s62  1.000,    s63  1.000,    s64  1.000,    s65  1.000
+s66  1.000,    s67  1.000,    s68  1.000,    s69  1.000,    s70  1.000
+s71  1.000,    s72  1.000,    s73  1.000,    s74  4.000,    s75  1.000
+s76  1.000,    s77  1.000,    s78  1.000,    s79  1.000,    s80  1.000
+s81  1.000,    s82  1.000,    s83  1.000,    s84  1.000,    s85  1.000
+s86  1.000,    s87  1.000,    s88  1.000,    s89  1.000,    s90  4.000
+s91  4.000,    s92  1.000,    s93  1.000,    s94  1.000,    s95  1.000
+s96  4.000,    s97  1.000,    s98  1.000,    s99  1.000,    s100 1.000
+s101 1.000,    s102 1.000,    s103 1.000,    s104 1.000,    s105 1.000
+s106 1.000,    s107 1.000,    s108 1.000,    s109 1.000,    s110 4.000
+s111 1.000,    s112 1.000,    s113 1.000,    s114 1.000,    s115 1.000
+s116 4.000,    s117 1.000,    s118 1.000,    s119 1.000,    s120 1.000
+s121 1.000,    s122 1.000,    s123 1.000,    s124 1.000,    s125 1.000
+s126 1.000,    s127 1.000,    s128 1.000,    s129 1.000,    s130 4.000
+s131 1.000,    s132 1.000,    s133 1.000,    s134 1.000,    s135 1.000
+s136 1.000,    s137 1.000,    s138 1.000,    s139 1.000,    s140 1.000
+s141 4.000,    s142 1.000,    s143 1.000,    s144 1.000,    s145 4.000
+s146 1.000,    s147 1.000,    s148 1.000,    s149 1.000,    s150 1.000
+s151 1.000,    s152 1.000,    s153 1.000,    s154 1.000,    s155 1.000
+s156 1.000,    s157 1.000,    s158 1.000,    s159 1.000,    s160 1.000
+s161 1.000,    s162 1.000,    s163 4.000,    s164 1.000,    s165 1.000
+s166 1.000,    s167 1.000,    s168 1.000,    s169 1.000,    s170 1.000
+s171 1.000,    s172 1.000,    s173 1.000,    s174 1.000,    s175 1.000
+s176 1.000,    s177 1.000,    s178 4.000,    s179 1.000,    s180 1.000
+s181 1.000,    s182 1.000,    s183 1.000,    s184 1.000,    s185 1.000
+s186 1.000,    s187 1.000,    s188 1.000,    s189 4.000,    s190 1.000
+s191 1.000,    s192 1.000,    s193 1.000,    s194 1.000,    s195 1.000
+s196 1.000,    s197 1.000,    s198 1.000,    s199 1.000,    s200 1.000
+s201 4.000,    s202 1.000,    s203 1.000,    s204 4.000,    s205 1.000
+s206 1.000,    s207 4.000,    s208 1.000,    s209 1.000,    s210 4.000
+s211 1.000,    s212 1.000,    s213 1.000,    s214 1.000,    s215 4.000
+s216 4.000,    s217 1.000,    s218 1.000,    s219 1.000,    s220 1.000
+s221 1.000,    s222 1.000,    s223 4.000,    s224 1.000,    s225 1.000
+s226 1.000,    s227 1.000,    s228 1.000,    s229 1.000,    s230 1.000
+s231 1.000,    s232 1.000,    s233 1.000,    s234 4.000,    s235 1.000
+s236 4.000,    s237 1.000,    s238 1.000,    s239 1.000,    s240 1.000
+s241 1.000,    s242 1.000,    s243 1.000,    s244 1.000,    s245 1.000
+s246 1.000,    s247 1.000,    s248 1.000,    s249 1.000,    s250 4.000
+
+
+----    228 PARAMETER SolStat  Solve status
+
+s1   1.000,    s2   1.000,    s3   1.000,    s4   1.000,    s5   1.000
+s6   1.000,    s7   1.000,    s8   1.000,    s9   1.000,    s10  1.000
+s11  1.000,    s12  1.000,    s13  1.000,    s14  1.000,    s15  1.000
+s16  1.000,    s17  1.000,    s18  1.000,    s19  1.000,    s20  1.000
+s21  1.000,    s22  1.000,    s23  1.000,    s24  1.000,    s25  1.000
+s26  1.000,    s27  1.000,    s28  1.000,    s29  1.000,    s30  1.000
+s31  1.000,    s32  1.000,    s33  1.000,    s34  1.000,    s35  1.000
+s36  1.000,    s37  1.000,    s38  1.000,    s39  1.000,    s40  1.000
+s41  1.000,    s42  1.000,    s43  1.000,    s44  1.000,    s45  1.000
+s46  1.000,    s47  1.000,    s48  1.000,    s49  1.000,    s50  1.000
+s51  1.000,    s52  1.000,    s53  1.000,    s54  1.000,    s55  1.000
+s56  1.000,    s57  1.000,    s58  1.000,    s59  1.000,    s60  1.000
+s61  1.000,    s62  1.000,    s63  1.000,    s64  1.000,    s65  1.000
+s66  1.000,    s67  1.000,    s68  1.000,    s69  1.000,    s70  1.000
+s71  1.000,    s72  1.000,    s73  1.000,    s74  1.000,    s75  1.000
+s76  1.000,    s77  1.000,    s78  1.000,    s79  1.000,    s80  1.000
+s81  1.000,    s82  1.000,    s83  1.000,    s84  1.000,    s85  1.000
+s86  1.000,    s87  1.000,    s88  1.000,    s89  1.000,    s90  1.000
+s91  1.000,    s92  1.000,    s93  1.000,    s94  1.000,    s95  1.000
+s96  1.000,    s97  1.000,    s98  1.000,    s99  1.000,    s100 1.000
+s101 1.000,    s102 1.000,    s103 1.000,    s104 1.000,    s105 1.000
+s106 1.000,    s107 1.000,    s108 1.000,    s109 1.000,    s110 1.000
+s111 1.000,    s112 1.000,    s113 1.000,    s114 1.000,    s115 1.000
+s116 1.000,    s117 1.000,    s118 1.000,    s119 1.000,    s120 1.000
+s121 1.000,    s122 1.000,    s123 1.000,    s124 1.000,    s125 1.000
+s126 1.000,    s127 1.000,    s128 1.000,    s129 1.000,    s130 1.000
+s131 1.000,    s132 1.000,    s133 1.000,    s134 1.000,    s135 1.000
+s136 1.000,    s137 1.000,    s138 1.000,    s139 1.000,    s140 1.000
+s141 1.000,    s142 1.000,    s143 1.000,    s144 1.000,    s145 1.000
+s146 1.000,    s147 1.000,    s148 1.000,    s149 1.000,    s150 1.000
+s151 1.000,    s152 1.000,    s153 1.000,    s154 1.000,    s155 1.000
+s156 1.000,    s157 1.000,    s158 1.000,    s159 1.000,    s160 1.000
+s161 1.000,    s162 1.000,    s163 1.000,    s164 1.000,    s165 1.000
+s166 1.000,    s167 1.000,    s168 1.000,    s169 1.000,    s170 1.000
+s171 1.000,    s172 1.000,    s173 1.000,    s174 1.000,    s175 1.000
+s176 1.000,    s177 1.000,    s178 1.000,    s179 1.000,    s180 1.000
+s181 1.000,    s182 1.000,    s183 1.000,    s184 1.000,    s185 1.000
+s186 1.000,    s187 1.000,    s188 1.000,    s189 1.000,    s190 1.000
+s191 1.000,    s192 1.000,    s193 1.000,    s194 1.000,    s195 1.000
+s196 1.000,    s197 1.000,    s198 1.000,    s199 1.000,    s200 1.000
+s201 1.000,    s202 1.000,    s203 1.000,    s204 1.000,    s205 1.000
+s206 1.000,    s207 1.000,    s208 1.000,    s209 1.000,    s210 1.000
+s211 1.000,    s212 1.000,    s213 1.000,    s214 1.000,    s215 1.000
+s216 1.000,    s217 1.000,    s218 1.000,    s219 1.000,    s220 1.000
+s221 1.000,    s222 1.000,    s223 1.000,    s224 1.000,    s225 1.000
+s226 1.000,    s227 1.000,    s228 1.000,    s229 1.000,    s230 1.000
+s231 1.000,    s232 1.000,    s233 1.000,    s234 1.000,    s235 1.000
+s236 1.000,    s237 1.000,    s238 1.000,    s239 1.000,    s240 1.000
+s241 1.000,    s242 1.000,    s243 1.000,    s244 1.000,    s245 1.000
+s246 1.000,    s247 1.000,    s248 1.000,    s249 1.000,    s250 1.000
+
+
+
+EXECUTION TIME       =       33.234 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+
+
+USER: Small MUD - 5 User License                     G200622/0001AP-GEN
+      Utah State University, Utah Water Research Laboratory      DC7087
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\
+           Lectures\HW4-MonteCarlo.gms
+Output     C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW
+           4-MonteCarlo.lst

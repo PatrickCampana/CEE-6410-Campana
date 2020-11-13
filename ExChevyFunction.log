@@ -1,0 +1,62 @@
+
+--- Job ExChevyFunction.gms Start 10/05/20 11:11:54 32.2.0 rc62c018 WEX-WEI x86 64bit/MS Windows
+--- Applying:
+    C:\GAMS\32\gmsprmNT.txt
+--- GAMS Parameters defined
+    Input "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\ExChevyFunction.gms"
+    PageWidth 80
+    PageSize 0
+    PageContr 3
+    Action CE
+    ScrDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\225a\"
+    SysDir C:\GAMS\32\
+    WorkDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\"
+    LogOption 3
+    DFormat 0
+    TFormat 0
+    ErrorLog 99
+    IDE 1
+GAMS 32.2.0   Copyright (C) 1987-2020 GAMS Development. All rights reserved
+Licensee: Small MUD - 5 User License                     G200622/0001AP-GEN
+          Utah State University, Utah Water Research Laboratory      DC7087
+          C:\GAMS\32\gamslice.txt
+--- Starting compilation
+--- ExChevyFunction.gms(63) 3 Mb
+--- Starting execution: elapsed 0:00:00.004
+--- ExChevyFunction.gms(58) 4 Mb
+--- Generating NLP model ChevyModel
+--- ExChevyFunction.gms(61) 6 Mb
+---   1 rows  3 columns  3 non-zeroes
+---   48 nl-code  2 nl-non-zeroes
+--- ExChevyFunction.gms(61) 4 Mb
+--- Executing CONOPT (Solvelink=2): elapsed 0:00:00.038
+CONOPT 3         32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+ 
+ 
+    C O N O P T 3   version 3.17L
+    Copyright (C)   ARKI Consulting and Development A/S
+                    Bagsvaerdvej 246 A
+                    DK-2880 Bagsvaerd, Denmark
+ 
+ 
+   Iter Phase Ninf   Infeasibility   RGmax    NSB   Step InItr MX OK
+      0   0        4.7596121032E+00 (Input point)
+ 
+                   Pre-triangular equations:   0
+                   Post-triangular equations:  1
+ 
+      1   0        0.0000000000E+00 (After pre-processing)
+      2   0        0.0000000000E+00 (After scaling)
+ 
+ ** Feasible solution. Value of objective =   -4.75961210321
+ 
+   Iter Phase Ninf     Objective     RGmax    NSB   Step InItr MX OK
+      5   3       -9.6030914335E-05 0.0E+00     0
+ 
+ ** Optimal solution. There are no superbasic variables.
+ 
+--- Reading solution for model ChevyModel
+--- Executing after solve: elapsed 0:00:00.081
+--- ExChevyFunction.gms(63) 4 Mb
+*** Status: Normal completion
+--- Job ExChevyFunction.gms Stop 10/05/20 11:11:54 elapsed 0:00:00.181

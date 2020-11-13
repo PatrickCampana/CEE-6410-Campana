@@ -1,0 +1,59 @@
+
+--- Job Ex6-3-relaxed.gms Start 09/28/20 09:46:45 32.2.0 rc62c018 WEX-WEI x86 64bit/MS Windows
+--- Applying:
+    C:\GAMS\32\gmsprmNT.txt
+--- GAMS Parameters defined
+    Input "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex6-3-relaxed.gms"
+    PageWidth 80
+    PageSize 0
+    PageContr 3
+    Action CE
+    ScrDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\225a\"
+    SysDir C:\GAMS\32\
+    WorkDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\"
+    LogOption 3
+    DFormat 0
+    TFormat 0
+    ErrorLog 99
+    IDE 1
+GAMS 32.2.0   Copyright (C) 1987-2020 GAMS Development. All rights reserved
+Licensee: Small MUD - 5 User License                     G200622/0001AP-GEN
+          Utah State University, Utah Water Research Laboratory      DC7087
+          C:\GAMS\32\gamslice.txt
+--- Starting compilation
+--- Ex6-3-relaxed.gms(82) 3 Mb
+--- Starting execution: elapsed 0:00:00.026
+--- Generating LP model WatSupplyRelaxed
+--- Ex6-3-relaxed.gms(75) 4 Mb
+---   10 rows  5 columns  18 non-zeroes
+--- Executing CPLEX (Solvelink=2): elapsed 0:00:00.106
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Reading data...
+Starting Cplex...
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+Version identifier: 12.10.0.0 | 2019-11-26 | 843d4de2ae
+CPXPARAM_Advance                                 0
+CPXPARAM_Simplex_Display                         2
+CPXPARAM_Threads                                 1
+CPXPARAM_Parallel                                1
+Tried aggregator 1 time.
+LP Presolve eliminated 8 rows and 3 columns.
+Aggregator did 2 substitutions.
+All rows and columns eliminated.
+Presolve time = 0.00 sec. (0.00 ticks)
+LP status(1): optimal
+Cplex Time: 0.02sec (det. 0.01 ticks)
+
+Optimal solution found.
+Objective :      305833.333333
+
+--- Reading solution for model WatSupplyRelaxed
+--- Executing after solve: elapsed 0:00:00.217
+--- Ex6-3-relaxed.gms(77) 4 Mb
+*** Status: Normal completion
+--- Job Ex6-3-relaxed.gms Stop 09/28/20 09:46:46 elapsed 0:00:00.267

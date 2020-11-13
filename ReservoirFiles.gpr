@@ -6,17 +6,52 @@
 [RP:RESERVOIRCODE2]
 1=
 
+[RP:EX6-3-RELAXED]
+1=
+
+[RP:UNTITLED_1]
+1=
+
+[RP:EX6-3-INTEGER]
+1=
+
+[RP:EX2-1DUAL]
+1=
+
+[RP:HW5_MIP]
+1=
+
+[RP:HW5_DUALFORMULATION]
+1=
+
+[RP:EX8-4-1]
+1=
+
+[RP:EXCHEVYFUNCTION]
+1=
+
+[RP:HW4-MONTECARLO]
+1=
+
 [MRUFILES]
-1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex2-1-parametric.gms
-2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\cplex.opt
+1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW5_DualFormulation.gms
+2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW5_MIP.gms
+3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex2-1Dual.gms
+4=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex6-3-integer.gms
+5=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\Untitled_1.gms
+6=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt
+7=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex6-3-relaxed.gms
+8=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\Ex6-3-relaxed.lst
 
 [OPENWINDOW_1]
-FILE0=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt
-FILE1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gms
-FILE2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.lst
-FILE3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.lst
+FILE0=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ExChevyFunction.lst
+FILE1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW4-MonteCarlo.lst
+FILE2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex8-4-1.gms
+FILE3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\ExChevyFunction.gms
+FILE4=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\HW4-MonteCarlo.gms
+FILE5=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\HW4-MonteCarlo.gms
 MAXIM=0
-TOP=-9
-LEFT=-13
+TOP=19
+LEFT=261
 HEIGHT=919
 WIDTH=960
