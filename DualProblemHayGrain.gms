@@ -22,7 +22,7 @@ Uses General Algebraic Modeling System to Solve this Linear Program
 
 Patrick Campana
 Patrickcampana555@gmail.com
-September 23, 2020
+10/1/2020
 
 $offtext
 
@@ -52,29 +52,51 @@ Scalar Land the max amount of land available for crops  RHS coefficient (acres)
 
 * 3. DEFINE the variables
 VARIABLES X(crop) acres of crop planted (acre)
-          VPROFIT  total profit ($);
+          VPROFIT  total profit ($)
+          Y(time) water scarcity (per month)
+          YLand Land scarcity (acres)
+          VREDCOST;
+
 
 * Non-negativity constraints
-POSITIVE VARIABLES X;
+POSITIVE VARIABLES X, Y, YLand;
 
 * 4. COMBINE variables and data in equations
 EQUATIONS
-   PROFIT Total profit ($) and objective function value
-   WATER_CONSTRAIN(time) water resource Constraints
-   LAND_CONSTRAIN land resource constraint      ;
+  PROFIT Total profit ($) and objective function value
+  WATER_CONSTRAIN(time) water resource Constraints
+   LAND_CONSTRAIN land resource constraint
+   REDCOSTWATER(crop) reduced cost constraints
+   REDCOST reduced cost objective function;
 
+*Primal Equations
 PROFIT..                 VPROFIT =E= SUM(crop,c(crop)*X(crop));
 WATER_CONSTRAIN(time)..    SUM(crop,A(crop,time)*X(crop)) =L= bb(time);
 LAND_CONSTRAIN..         SUM(crop, X(crop)) =L= Land;
 
-* 5. DEFINE the MODEL from the EQUATIONS
-MODEL MaxProfit /All/;
-*Altnerative way to write (include all previously defined equations)
-*MODEL PLANTING /ALL/;
+*Dual Equations
+REDCOSTWATER(crop)..      YLand+SUM(time,A(crop,time)*Y(time))=G= c(crop);
+REDCOST..               Land*YLand+SUM(time,Y(time)*bb(time)) =E= VREDCOST;
 
-* 6. SOLVE the MODEL
-* Solve the MaxProfit model using a Linear Programming Solver (see File=>Options=>Solvers)
-*     to maximize VPROFIT
-SOLVE MaxProfit USING LP MAXIMIZING VPROFIT;
+* 5. DEFINE the MAX PROFIT MODEL from the PRIMAL EQUATIONS
+MODEL CROPS_PRIMAL /PROFIT, WATER_CONSTRAIN, LAND_CONSTRAIN/;
+CROPS_PRIMAL.OptFile = 1;
+option solslack = 1;
 
-* 6. CLick File menu => RUN (F9) or Solve icon and examine solution report in .LST file
+* 6. DEFINE THE REDUCED COST MODEL FROM THE DUAL EQUATIONS
+MODEL CROPS_DUAL /REDCOSTWATER, REDCOST/;
+option solslack = 1;
+CROPS_DUAL.OptFile = 1;
+
+* 7. Solve CROPS_PRIMAL via MAXIMIZATION
+SOLVE CROPS_PRIMAL USING LP MAXIMIZING VPROFIT;
+
+* 8. Solve CROPS_DUAL via MINIMIZATION
+SOLVE CROPS_DUAL  USING LP MINIMIZING VREDCOST;
+
+* 9. Dump Results to Excel Workbook
+Execute_Unload "HW5_Dual.gdx";
+* Dump the gdx file to an Excel workbook
+Execute "gdx2xls HW5_Dual.gdx"
+* To open the GDX file in the GAMS IDE, select File => Open.
+* In the Open window, set Filetype to .gdx and select the file.

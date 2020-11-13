@@ -94,7 +94,7 @@ PARAMETERS
 
 * 3. DEFINE the variables: Flow to each location, Benefit
 VARIABLES
-          X(Loc, Time) Flow Per Location Per Time (Volume)
+          X(Loc, Time) Flow Per Location Per Time (Acft per season)
           VPROFIT  total profit ($);
 
 * Non-negativity constraints
