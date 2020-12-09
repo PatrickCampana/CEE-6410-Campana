@@ -43,7 +43,7 @@ SETS Loc different locations in the model space  /Reservoir, Spillway, Turbines,
      PLoc(Loc)  Locations which generate Profit /Turbines, Irrigation/
      GLoc(Loc)  Locations which generate Profit /RiverA/
      ILoc (Loc) Locations which Receive external Flows /Reservoir/
-     Time Months in period of interest (months) /M1, M2,M3, M4, M5, M6/
+     Time Months in period of interest (months) /M1*M6/
 
 
 * 2. DEFINE input data, Flow Constraints Coeffiecents, Monthly Inflow, Profit Coefficients

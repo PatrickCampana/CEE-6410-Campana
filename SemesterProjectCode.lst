@@ -1,0 +1,335 @@
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:20:24 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+       
+      CEE 6410 - Water Resources Systems Analysis
+      Semester Project Code
+       
+   7   
+   8  * 1. DEFINE MODEL DIMENSIONS
+   9  SETS Loc Locations in Model / Res "For storage or water surface elevation 
+      in F.G."
+  10            Dam "For Flow out of F.G. Dam"/
+  11   
+  12   
+  13       Years number of years modeled /Y1*Y5/
+  14   
+  15       Months variable for each month of the year M1 corresponds to January 
+      /M1*M12/
+  16       HydrologicScenarios the three different hydrologic scenarios I envisi
+      oned for this model /W1*W3/;
+  17   
+  18  * 2. DEFINE INPUT DATA
+  19  PARAMETERS
+  20   
+  21  *Hydropower Constraints
+  22     HydroPower(Months) Hydropower Monthly Flow Volumes
+  23           /M1        110063
+  24           M2        108932
+  25           M3        50745
+  26           M4        49732
+  27           M5        51806
+  28           M6        124661
+  29           M7        89708
+  30           M8        108694
+  31           M9        98434
+  32           M10        63808
+  33           M11        77209
+  34           M12        105989/;
+  35   
+  36   
+  37   
+  38  *Flow Into Flaming Gorge Dam
+  39  *This currently assumes "Wet" hydrologic Scenario 5 years in a row
+  40  Table FlowIn(Months, Years) Flow In to F.G. Res (Ac-ft)
+  41                 Y1                Y2               Y3                 Y4   
+                        Y5
+  42  M1        54709.8843        54709.8843         54709.8843           54709.
+      8843            54709.8843
+  43  M2        102194.5785        102194.5785        102194.5785        102194.
+      5785        102194.5785
+  44  M3        310868.6281        310868.6281        310868.6281        310868.
+      6281        310868.6281
+  45  M4        412552.0661        412552.0661        412552.0661        412552.
+      0661        412552.0661
+  46  M5        552063.4711        552063.4711        552063.4711        552063.
+      4711        552063.4711
+  47  M6        658152.3967        658152.3967        658152.3967        658152.
+      3967        658152.3967
+  48  M7        366615.6694        366615.6694        366615.6694        366615.
+      6694        366615.6694
+  49  M8        170992.6612        170992.6612        170992.6612        170992.
+      6612        170992.6612
+  50  M9        83957.95041        83957.95041        83957.95041        83957.9
+      5041        83957.95041
+  51  M10        65591.80165        65591.80165        65591.80165        65591.
+      80165        65591.80165
+  52  M11        72242.18182        72242.18182        72242.18182        72242.
+      18182        72242.18182
+  53  M12        64218.44628        64218.44628        64218.44628        64218.
+      44628        64218.44628;
+  54   
+  55   
+  56   
+  57  *LTRP enviromental flows for each year obtained by  subtracting Yampa rive
+      r flows
+  58  *From Green River in Jensen Utah flows to approximate Flaming Gorge Releas
+      e in June
+  59  *These flows also assume the entirety of the LTRP release occurs in the mo
+      nth of June
+  60   
+  61  *W1 is a dry year, W2 is a average year, W3 is a wet year
+  62  Table EnviroFlows(Years,HydrologicScenarios) Enviromental Flow Release For
+       Each Year and Hydrologic Scenario
+  63            W1                    W2            W3
+  64  Y1        167147.11        287623.14        473652.89
+  65  Y2        167147.11        287623.14        473652.89
+  66  Y3        167147.11        287623.14        473652.89
+  67  Y4        167147.11        287623.14        473652.89
+  68  Y5        167147.11        287623.14        473652.89;
+  69   
+  70   
+  71  *Baseflow Constraints:
+  72  *Note This is set up so that It can be adjusted for different Hydrologic
+  73  *Or Colorado Pike Minnow Summer Base Flow constraints
+  74  *Currently it is set for my "Wet" hydrologic Scenario 5 years in a row and
+       incorperates
+  75  *colorado pikeminnow b.f. constraints into baseflow constraints
+  76  Table    BaseFlows(Months, Years) Base Flow Constraints In Each Year Month
+      ly Flow Volumes (Ac-ft)
+  77                    Y1           Y2                   Y3                    
+       Y4               Y5
+  78  M1        61487.60331        61487.60331        61487.60331        61487.6
+      0331       61487.60331
+  79  M2        55537.19008        55537.19008        55537.19008        55537.1
+      9008       55537.19008
+  80  M3        49190.08264        49190.08264        49190.08264        49190.0
+      8264       49190.08264
+  81  M4        47603.30579        47603.30579        47603.30579        47603.3
+      0579       47603.30579
+  82  M5        50578.5124         50578.5124         50578.5124         50578.5
+      124        50578.5124
+  83  M6           0                     0                    0                0
+                     0
+  84  M7        98380.16529        98380.16529        98380.16529        98380.1
+      6529       98380.16529
+  85  M8        98380.16529        98380.16529        98380.16529        98380.1
+      6529       98380.16529
+  86  M9        95206.61157        95206.61157        95206.61157        95206.6
+      1157       95206.61157
+  87  M10       52264.46281        52264.46281        52264.46281        52264.4
+      6281       52264.46281
+  88  M11       50578.5124         50578.5124         50578.5124         50578.5
+      124        50578.5124
+  89  M12       61487.60331        61487.60331        61487.60331        61487.6
+      0331       61487.60331;
+  90   
+  91   
+  92   
+  93  SCALARS
+  94  *Maximum outflow possible in one month. Does not consideer using the spill
+      way
+  95           MaxFlowOut  Maximum Flow Out In One Month (Ac-ft)   /511736/
+  96   
+  97  *Maximum F.G. storage s.t.  1 to 10% exceedance can be routed at anytime
+  98           MaxStore Maximum Water Storage in F.G. Reservoir (Ac-ft) /3086976
+      /
+  99   
+ 100  *Minimum F.G. storage set midway between rated hydropower storage and mini
+      mum hydropower storage
+ 101           MinStore Minimum Water Storage in F.G. Reservoir (Ac-ft)/545757.5
+      /
+ 102   
+ 103  *Setting Intial Storage In Reservoir For Model, I arbitrarily chose this v
+      alue
+ 104  *It corresponds to a reservoir elevation of 6009.27 ft which may be a bit 
+      high
+ 105  *in reality for january. Model results are likely fairly sensitive to this
+       value
+ 106   
+ 107   
+ 108           IntStrg Intial Reservoir Storage of F.G. Reservoir (Ac-ft) /26177
+      26.50/
+ 109   
+ 110  *Set Upper and lower bounds for binary Variables
+ 111  *         BinLow Lowerbound of Binary Variables /0/
+ 112  *         BinHigh Upperbound of Binary Variables /1/;
+ 113   
+ 114  *3. Define Variables
+ 115  VARIABLES
+ 116           Env(Years) value assumes 1 when enviromental flows are met
+ 117           Yenv dummy variable to hold sum of integers values
+ 118  *         NoEnv(Years) value assumes 1 when envromental flows are not met
+ 119           X(Loc,Months,Years) volume of water flowing out of Dam or Stored 
+      in Reservoir;
+ 120   
+ 121  *3a. Define Select Variables as Binary
+ 122  BINARY VARIABLES
+ 123           Env;
+ 124  *         NoEnv;
+ 125   
+ 126  *3b. Define Positive Variables
+ 127  POSITIVE VARIABLES
+ 128           X;
+ 129   
+ 130  *4. COMBINE variables and data in equations
+ 131  EQUATIONS
+ 132  *Binary Constraints
+ 133  *     BinarySumConst(Years) used to restrict flows in june to either envir
+      omental or baseflow
+ 134       EnvBinaryHigh(Years)   Upper bound on binary variables
+ 135       EnvBinaryLow(Years)    Lower bound on binary variables
+ 136  *    NoEnvBinaryHigh(Years)   Upper bound on binary variables
+ 137  *     NoEnvBinaryLow(Years)    Lower bound on binary variables
+ 138       TotalEnv used to sum the number of times enviromental flows are met
+ 139  *Enviromental Flow Constraint if Env = 1
+ 140       Enviro(Years) Sets outflow requirement for enviromental release flows
+       in June for LTRP
+ 141  *F.G. Flow and Storage Constraints
+ 142   
+ 143  *This equaiton will be set later to determine maximum and minimum bounds o
+      f Water to be
+ 144  *Released over a five year period. This is my maximumize flows to Lake Pow
+      ell Constraint
+ 145       TotalOut(Months,Years) used to sum total outflows from F.G. over the 
+      model period
+ 146   
+ 147       MMinStore(Months,Years) used to check minimum storage is met for each
+       month
+ 148       MMaxStore(Months,Years) used to check maximum storgage is not surpass
+      ed in each month
+ 149       MMaxFlowOut(Months,Years) used to check that maximum outflow is not s
+      urpassed in any year
+ 150       Hydro(Months,Years) used for hydropower constraints
+ 151       BF(Months,Years)    used baseflow constraints
+ 152  *Conservation of Mass Constraints;
+ 153       IResMB used to require conservation of mass in the first timestep
+ 154       ResMB(Months, Years) used to require conservation of mass in the foll
+      owing time steps;
+ 155   
+ 156   
+ 157  *$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+      $$$$$$
+ 158  *Constraint Equations
+ 159  *$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+      $$$$$$
+ 160   
+ 161  *1.) First define binary constraints because it is easy to do so:
+ 162   
+ 163  *Forces either Enviromental Flows or No Enviromental Flows to occur for a 
+      given year in june
+ 164  *     BinarySumConst(Years).. Env(Years)+NoEnv(Years) =L= 1;
+ 165       EnvBinaryHigh(Years).. Env(Years) =L=1;
+ 166       EnvBinaryLow(Years).. Env(Years) =G= 0;
+ 167   
+ 168  *Function being maximized in this model
+ 169       TotalEnv.. Env('Y1')+Env('Y2')+Env('Y3')+Env('Y4')+Env('Y5')=E=Yenv;
+ 170   
+ 171  *2.) Define Storage and Outflow Constraint Equations
+ 172   
+ 173  *Flow is always less than bypass tunnel and spillway capacity
+ 174       MMaxFlowOut(Months,Years).. X('Dam',Months,Years) =L= MaxFlowOut;
+ 175   
+ 176  *Flow is always greater than hydropower constraints
+ 177        Hydro(Months, Years).. X('Dam',Months,Years)=G=HydroPower(Months);
+ 178   
+ 179  *Flow is always greater than baseflow constraints, ColoradoPikeMinnow Summ
+      er Base Flows are built into BaseFlows
+ 180       BF(Months,Years).. X('Dam',Months,Years)=G= BaseFlows(Months,Years);
+ 181   
+ 182  *Minimum storage constraint. Corresponds to reservoir elevation midway bet
+      ween rated hydropower
+ 183  *Elevation and minimum hydropower elevation needed for hydropower
+ 184           MMinStore(Months,Years).. X('Res',Months,Years) =G= MinStore;
+ 185   
+ 186  *Maximum storage constraint. Corresponds to
+ 187           MMaxStore(Months,Years).. X('Res',Months,Years)=L= MaxStore;
+ 188   
+ 189  *3.) Define Enviromental MIP LTRP Flow
+ 190  *When this contraint is satisified Enviromental flows are met, I am fairly
+       sure
+ 191  *Multiplying the EnviroFlows parameter by the Env Variable will allow the 
+      model
+ 192  *Flexibility in choosing to trying to meet enviromental flows or using hyd
+      ropower
+ 193  *constraint in June
+ 194           Enviro(Years).. X('Dam','M6',Years)=G= Env(Years)*EnviroFlows(Yea
+      rs,'W3');
+ 195   
+ 196  *4.) Define Minimum allowable total flow to Lake Powell for 5 year period
+ 197  *Note: I am going to start this constraint extremely low and then incremen
+      t to see
+ 198  *when it binds, and finally when it causes the model to become unfeasible
+ 199  *This will be difficult for determininigs mixes of wet, dry, avg years
+ 200  *I believe intial storage volume will heavily influence this constraint as
+      well
+ 201   
+ 202  *3.) Define Massbalance Equations
+ 203  *Intial Reservoir Mass Balance, defines one set of equations, 1 total
+ 204  IResMB.. X('Res','M1','Y1')= FlowIn('M1', 'Y1')+IntStrg-X('Dam','M1','Y1')
+ 205   
+ 206  * Reservoir Mass Balance, defines one set of equations, 5 total
+ 207  ResMB..(Months,'Y1')$(ORD(Month)ge 2 ).. X('Res',Months,'Y1')= FlowIn(Mont
+****      $37,409
+      hs,'Y1')+X('Res',Months-1,'Y1')-X('Dam',Months,'Y1')    ;
+****  37  '=l=' or '=e=' or '=g=' operator expected
+**** 409  Unrecognizable item - skip to find a new statement
+****        looking for a ';' or a key word to get started again
+ 208  ResMB..(Months,Years)$(ORD(Years)ge 2 ).. X('Res',Months,Years)= FlowIn(Mo
+****        $148    $148,8,653,37,409
+      nths,Years)+X('Res',Months-1,Years)-X('Dam','M1','Y1')
+****   8  ')' expected
+****  37  '=l=' or '=e=' or '=g=' operator expected
+**** 148  Dimension different - The symbol is referenced with more/less
+****         indices as declared
+**** 409  Unrecognizable item - skip to find a new statement
+****        looking for a ';' or a key word to get started again
+**** 653  The left side of an equation cannot be a set expression
+ 209   
+ 210   
+ 211  *5. DEFINE the MODEL from the Equations
+ 212  MODEL FlamingGorge /ALL/;
+ 213  *IrrigationMaximization.OptFile = 1;
+ 214  *        Display Slack Variables Rather Than LB and UB
+ 215           option solslack = 1;
+ 216   
+ 217  *6. Solve the Model as an MIP
+ 218  SOLVE FlamingGorge USING MIP MAXIMIZING Yenv;
+****                                              $257
+**** 257  Solve statement not checked because of previous errors
+ 219   
+ 220  *7. Dump File to Excel Workbook
+ 221  Execute_Unload "HW5_MIP_V2.gdx";
+ 222  * Dump the gdx file to an Excel workbook
+ 223  Execute "gdx2xls HW5_MIP_V2.gdx"
+ 224  * To open the GDX file in the GAMS IDE, select File => Open.
+ 225  * In the Open window, set Filetype to .gdx and select the file.
+ 226   
+ 227   
+ 228   
+ 229   
+ 230   
+ 231   
+ 232   
+
+**** 9 ERROR(S)   0 WARNING(S)
+
+
+COMPILATION TIME     =        0.047 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
+
+
+USER: Small MUD - 5 User License                     G200622/0001AP-GEN
+      Utah State University, Utah Water Research Laboratory      DC7087
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\Se
+           mesterProjectCode.gms
+Output     C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\Se
+           mesterProjectCode.lst
+
+**** USER ERROR(S) ENCOUNTERED

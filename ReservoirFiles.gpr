@@ -3,9 +3,6 @@
 [RP:EX2-1-PARAMETRIC]
 1=
 
-[RP:RESERVOIRCODE2]
-1=
-
 [RP:EX6-3-RELAXED]
 1=
 
@@ -27,31 +24,40 @@
 [RP:EX8-4-1]
 1=
 
-[RP:EXCHEVYFUNCTION]
-1=
-
 [RP:HW4-MONTECARLO]
 1=
 
+[RP:EXCHEVYFUNCTION]
+1=
+
+[RP:EX_GMS_LABOR]
+1=
+
+[RP:HW5_MIP_V2]
+1=
+
+[RP:RESERVOIRCODE2]
+1=
+
+[RP:SEMESTERPROJECTCODE]
+1=
+
 [MRUFILES]
-1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW5_DualFormulation.gms
-2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW5_MIP.gms
-3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex2-1Dual.gms
-4=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex6-3-integer.gms
-5=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\Untitled_1.gms
-6=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\cplex.opt
-7=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex6-3-relaxed.gms
-8=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\Ex6-3-relaxed.lst
+1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.lst
+2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.lst
+4=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ReservoirCode2.gms
+5=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW5_MIP_V2.gms
+6=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\EX_GMS_LABOR.gms
+7=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\ExChevyFunction.gms
+8=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\HW4-MonteCarlo.gms
+9=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex8-4-1.gms
 
 [OPENWINDOW_1]
-FILE0=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\ExChevyFunction.lst
-FILE1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW4-MonteCarlo.lst
-FILE2=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\Ex8-4-1.gms
-FILE3=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\ExChevyFunction.gms
-FILE4=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\HW4-MonteCarlo.gms
-FILE5=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Rosenberg\Lectures\HW4-MonteCarlo.gms
+FILE0=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW5_MIP_V2.gms
+FILE1=C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\HW5_MIP_V2.gms
 MAXIM=0
-TOP=19
-LEFT=261
-HEIGHT=919
-WIDTH=960
+TOP=1
+LEFT=945
+HEIGHT=920
+WIDTH=952

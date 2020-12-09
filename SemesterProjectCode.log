@@ -1,0 +1,52 @@
+
+--- Job SemesterProjectCode.gms Start 12/08/20 17:20:24 32.2.0 rc62c018 WEX-WEI x86 64bit/MS Windows
+--- Applying:
+    C:\GAMS\32\gmsprmNT.txt
+--- GAMS Parameters defined
+    Input "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms"
+    PageWidth 80
+    PageSize 0
+    PageContr 3
+    Action CE
+    ScrDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\225a\"
+    SysDir C:\GAMS\32\
+    WorkDir "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\"
+    LogOption 3
+    DFormat 0
+    TFormat 0
+    ErrorLog 99
+    IDE 1
+GAMS 32.2.0   Copyright (C) 1987-2020 GAMS Development. All rights reserved
+Licensee: Small MUD - 5 User License                     G200622/0001AP-GEN
+          Utah State University, Utah Water Research Laboratory      DC7087
+          C:\GAMS\32\gamslice.txt
+--- Starting compilation
+--- SemesterProjectCode.gms(207) 3 Mb 2 Errors
+*** Error  37 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    '=l=' or '=e=' or '=g=' operator expected
+*** Error 409 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    Unrecognizable item - skip to find a new statement
+      looking for a ';' or a key word to get started again
+--- SemesterProjectCode.gms(208) 3 Mb 8 Errors
+*** Error 148 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    Dimension different - The symbol is referenced with more/less
+       indices as declared
+*** Error 148 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    Dimension different - The symbol is referenced with more/less
+       indices as declared
+*** Error   8 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    ')' expected
+*** Error 653 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    The left side of an equation cannot be a set expression
+*** Error  37 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    '=l=' or '=e=' or '=g=' operator expected
+*** Error 409 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    Unrecognizable item - skip to find a new statement
+      looking for a ';' or a key word to get started again
+--- SemesterProjectCode.gms(218) 3 Mb 9 Errors
+*** Error 257 in C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-6410-Campana\SemesterProjectCode.gms
+    Solve statement not checked because of previous errors
+--- SemesterProjectCode.gms(232) 3 Mb 9 Errors
+*** Status: Compilation error(s)
+--- Job SemesterProjectCode.gms Stop 12/08/20 17:20:24 elapsed 0:00:00.047
+Exit code = 2

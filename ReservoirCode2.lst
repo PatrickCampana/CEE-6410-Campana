@@ -1,4 +1,4 @@
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 1
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:08:28 Page 1
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 C o m p i l a t i o n
 
@@ -56,7 +56,7 @@ C o m p i l a t i o n
   43       PLoc(Loc)  Locations which generate Profit /Turbines, Irrigation/
   44       GLoc(Loc)  Locations which generate Profit /RiverA/
   45       ILoc (Loc) Locations which Receive external Flows /Reservoir/
-  46       Time Months in period of interest (months) /M1, M2,M3, M4, M5, M6/
+  46       Time Months in period of interest (months) /M1*M6/
   47   
   48   
   49  * 2. DEFINE input data, Flow Constraints Coeffiecents, Monthly Inflow, Pro
@@ -112,7 +112,7 @@ C o m p i l a t i o n
   94   
   95  * 3. DEFINE the variables: Flow to each location, Benefit
   96  VARIABLES
-  97            X(Loc, Time) Flow Per Location Per Time (Volume)
+  97            X(Loc, Time) Flow Per Location Per Time (Acft per season)
   98            VPROFIT  total profit ($);
   99   
  100  * Non-negativity constraints
@@ -215,8 +215,8 @@ C o m p i l a t i o n
  182  * In the Open window, set Filetype to .gdx and select the file.
 
 
-COMPILATION TIME     =        0.000 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 2
+COMPILATION TIME     =        0.031 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:08:28 Page 2
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
@@ -230,7 +230,7 @@ M1 1.000,    M2 2.000,    M3 3.000,    M4 4.000,    M5 5.000,    M6 6.000
 
 M1 2.000,    M2 3.000,    M3 4.000,    M4 5.000,    M5 6.000
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 3
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:08:28 Page 3
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Equation Listing    SOLVE ReservoirOptimization Using LP From line 153
 
@@ -315,12 +315,12 @@ REMAINING 27 ENTRIES SKIPPED
 
 Sustainability..  X(Reservoir,M6) =G= 5 ; (LHS = 0, INFES = 5 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 4
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:08:28 Page 4
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Column Listing      SOLVE ReservoirOptimization Using LP From line 153
 
 
----- X  Flow Per Location Per Time (Volume)
+---- X  Flow Per Location Per Time (Acft per season)
 
 X(Reservoir,M1)
                 (.LO, .L, .UP, .M = 0, 0, +INF, 0)
@@ -348,7 +348,7 @@ VPROFIT
                 (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
         1       PROFIT
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 5
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:08:28 Page 5
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Model Statistics    SOLVE ReservoirOptimization Using LP From line 153
 
@@ -360,8 +360,8 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
 NON ZERO ELEMENTS           175
 
 
-GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 6
+GENERATION TIME      =        0.281 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:08:28 Page 6
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Solution Report     SOLVE ReservoirOptimization Using LP From line 153
 
@@ -376,7 +376,7 @@ Solution Report     SOLVE ReservoirOptimization Using LP From line 153
 **** MODEL STATUS      1 Optimal                   
 **** OBJECTIVE VALUE               51.6000
 
- RESOURCE USAGE, LIMIT          0.094 10000000000.000
+ RESOURCE USAGE, LIMIT          0.297 10000000000.000
  ITERATION COUNT, LIMIT        18    2147483647
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
@@ -385,14 +385,14 @@ Cplex 12.10.0.0
 
 Reading parameter(s) from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE
                                                         -6410-Campana\cplex.opt"
->> 
+>>  objrng all
 >>  rhsrng all
 Finished reading from "C:\Users\Sharp Student\Documents\WRSA\GAMS\GitHub\CEE-641
                                                             0-Campana\cplex.opt"
 Space for names approximately 0.00 Mb
 Use option 'names no' to turn use of names off
 LP status(1): optimal
-Cplex Time: 0.08sec (det. 0.08 ticks)
+Cplex Time: 0.09sec (det. 0.08 ticks)
 Optimal solution found.
 Objective :          51.600000
 
@@ -456,6 +456,43 @@ RiverMB(RiverA, M4)                               0            0            0
 RiverMB(RiverA, M5)                               0            0            0
 RiverMB(RiverA, M6)                               0            0            0
 Sustainability                                    3            5            6
+  
+ 
+VARIABLE NAME                                 LOWER      CURRENT        UPPER
+-------------                                 -----      -------        -----
+X(Reservoir, M1)                               -1.1           -0         +INF
+X(Reservoir, M2)                               -0.8           -0         +INF
+X(Reservoir, M3)                               -0.2           -0          1.5
+X(Reservoir, M4)                               -0.5           -0          1.5
+X(Reservoir, M5)                               -0.5           -0          1.5
+X(Reservoir, M6)                               -INF           -0          3.7
+X(Spillway, M1)                                -INF           -0          1.6
+X(Spillway, M2)                                -INF           -0          1.7
+X(Spillway, M3)                                -INF           -0          1.8
+X(Spillway, M4)                                -INF           -0          1.7
+X(Spillway, M5)                                -INF           -0          1.5
+X(Spillway, M6)                                -INF           -0          1.5
+X(Turbines, M1)                                   0          1.6          2.7
+X(Turbines, M2)                           -2.22e-16          1.7          2.5
+X(Turbines, M3)                                   1          1.8            2
+X(Turbines, M4)                                 1.7          1.9         +INF
+X(Turbines, M5)                                 1.5            2         +INF
+X(Turbines, M6)                                 1.5            2         +INF
+X(Irrigation, M1)                              -INF            1          2.1
+X(Irrigation, M2)                              -INF          1.2            2
+X(Irrigation, M3)                               1.1          1.9          2.1
+X(Irrigation, M4)                               1.8            2          3.7
+X(Irrigation, M5)                               1.7          2.2          3.7
+X(Irrigation, M6)                               1.7          2.2          3.7
+X(RiverA, M1)                                  -INF           -0          2.1
+X(RiverA, M2)                                  -INF           -0            2
+X(RiverA, M3)                                  -INF           -0          1.9
+X(RiverA, M4)                                  -INF           -0            2
+X(RiverA, M5)                                  -INF           -0          2.2
+X(RiverA, M6)                                  -INF           -0          2.2
+VPROFIT                                        -INF            1         +INF
+ 
+ 
 
                        LOWER     SLACK     UPPER    MARGINAL
 
@@ -551,7 +588,7 @@ RiverA    .M6      .         .         .         .
   Sustainability  Makes it so that Final Reservoir storage is not less that inti
                   al
 
----- VAR X  Flow Per Location Per Time (Volume)
+---- VAR X  Flow Per Location Per Time (Acft per season)
 
                  LOWER     LEVEL     UPPER    MARGINAL
 
@@ -596,12 +633,12 @@ RiverA    .M6      .        1.000     +INF       .
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/25/20 20:02:32 Page 7
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 12/08/20 17:08:28 Page 7
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
 
-EXECUTION TIME       =        1.687 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+EXECUTION TIME       =        3.203 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
 
 
 USER: Small MUD - 5 User License                     G200622/0001AP-GEN
